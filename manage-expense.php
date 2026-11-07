@@ -93,13 +93,33 @@ echo "<script>window.location.href='manage-expense.php'</script>";
                 </tr>
               </thead>
               <?php
-              $userid=$_SESSION['detsuid'];
-$rows=db_rows($con, "select * from tblexpense where UserId = ?", 'i', [(int) $userid]);
-$cnt=1;
-foreach ($rows as $row) {
+$userid = (int) $_SESSION['detsuid'];
 
+// Pagination: show 10 rows at a time instead of the whole table.
+$perPage = 10;
+$total = (int) (db_row($con, "select count(*) as total from tblexpense where UserId = ?", 'i', [$userid])['total'] ?? 0);
+$totalPages = max(1, (int) ceil($total / $perPage));
+
+// ?page= must be a whole number; anything else falls back to the first page.
+$page = (int) ($_GET['page'] ?? 1);
+if ($page < 1) {
+    $page = 1;
+} elseif ($page > $totalPages) {
+    $page = $totalPages;
+}
+$offset = ($page - 1) * $perPage;
+
+// ORDER BY ID keeps the rows in a stable order, so a row cannot appear on two
+// pages or disappear between them. LIMIT/OFFSET are bound as integers too.
+$rows = db_rows($con, "select * from tblexpense where UserId = ? order by ID limit ? offset ?",
+                'iii', [$userid, $perPage, $offset]);
+$cnt = $offset + 1;
 ?>
               <tbody>
+              <?php if (!$rows) { ?>
+                <tr><td colspan="5">No expenses recorded yet.</td></tr>
+              <?php } ?>
+              <?php foreach ($rows as $row) { ?>
                 <tr>
                   <td><?php echo e($cnt);?></td>
               
@@ -112,13 +132,31 @@ foreach ($rows as $row) {
                       <input type="hidden" name="delid" value="<?php echo (int) $row['ID']; ?>">
                       <button type="submit" class="btn btn-link" style="padding:0">Delete</button>
                     </form>
+                  </td>
                 </tr>
-                <?php 
-$cnt=$cnt+1;
-}?>
-               
+                <?php $cnt = $cnt + 1; ?>
+              <?php } ?>
               </tbody>
             </table>
+
+            <?php if ($totalPages > 1) { ?>
+            <nav>
+              <ul class="pagination">
+                <li<?php echo $page <= 1 ? ' class="disabled"' : ''; ?>>
+                  <a href="manage-expense.php?page=<?php echo e($page - 1); ?>" aria-label="Previous">&laquo;</a>
+                </li>
+                <?php for ($p = 1; $p <= $totalPages; $p++) { ?>
+                <li<?php echo $p === $page ? ' class="active"' : ''; ?>>
+                  <a href="manage-expense.php?page=<?php echo e($p); ?>"><?php echo e($p); ?></a>
+                </li>
+                <?php } ?>
+                <li<?php echo $page >= $totalPages ? ' class="disabled"' : ''; ?>>
+                  <a href="manage-expense.php?page=<?php echo e($page + 1); ?>" aria-label="Next">&raquo;</a>
+                </li>
+              </ul>
+            </nav>
+            <p class="text-muted">Page <?php echo e($page); ?> of <?php echo e($totalPages); ?> &middot; <?php echo e($total); ?> expense(s)</p>
+            <?php } ?>
           </div>
 						</div>
 					</div>
