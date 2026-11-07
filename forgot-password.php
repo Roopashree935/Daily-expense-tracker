@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 include('includes/dbconnection.php');
 require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/validate.php';
 
 // Shown in the red message line; empty means "nothing to report".
 $msg = '';
@@ -9,9 +10,14 @@ $msg = '';
 if(isset($_POST['submit']))
   {
     csrf_check();
-    $contactno=$_POST['contactno'];
-    $email=$_POST['email'];
+    $contactno=trim($_POST['contactno'] ?? '');
+    $email=trim($_POST['email'] ?? '');
 
+    if (!is_valid_email($email) || !is_valid_mobile($contactno)) {
+      // Deliberately the same message as a wrong combination, so the form does
+      // not reveal which accounts exist.
+      $msg="Invalid Details. Please try again.";
+    } else {
         $ret=db_row($con, "select ID from tbluser where Email = ? and MobileNumber = ?", 'ss', [$email, $contactno]);
     if($ret !== null){
       $_SESSION['contactno']=$contactno;
@@ -20,6 +26,7 @@ if(isset($_POST['submit']))
     }
     else{
       $msg="Invalid Details. Please try again.";
+    }
     }
   }
   ?>

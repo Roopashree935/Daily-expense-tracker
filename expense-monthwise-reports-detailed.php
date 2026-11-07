@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
 require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/validate.php';
 require_login();
 
 // Reached by POST from the report form; a POST must carry this session's token.
@@ -58,12 +59,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php
 // The page is also reachable without a POST (someone opening the URL directly),
 // so every field needs a default before it is used.
-$fdate = $_POST['fromdate'] ?? '';
-$tdate = $_POST['todate'] ?? '';
+$fdate = trim($_POST['fromdate'] ?? '');
+$tdate = trim($_POST['todate'] ?? '');
 $rtype = $_POST['requesttype'] ?? '';
 $totalsexp = 0;
+
+// Only two real dates in the right order can produce a meaningful report.
+$dateError = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!is_valid_date($fdate) || !is_valid_date($tdate)) {
+        $dateError = 'Please choose a valid from date and to date.';
+    } elseif ($fdate > $tdate) {
+        $dateError = 'The from date must be on or before the to date.';
+    }
+}
 ?>
 <h5 align="center" style="color:blue">Monthwise Expense Report from <?php echo $fdate?> to <?php echo $tdate?></h5>
+<?php if ($dateError !== '') { ?>
+<p style="color:red" align="center"><?php echo $dateError; ?></p>
+<?php } ?>
 <hr />
                                     <table id="datatable" class="table table-bordered dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
                                         <thead>
@@ -77,7 +91,7 @@ $totalsexp = 0;
                                         </thead>
  <?php
 $userid = (int) $_SESSION['detsuid'];
-$rows = db_rows($con, "SELECT month(ExpenseDate) as rptmonth, year(ExpenseDate) as rptyear, SUM(ExpenseCost) as totalmonth FROM tblexpense where ExpenseDate BETWEEN ? and ? and UserId = ? group by month(ExpenseDate), year(ExpenseDate)", 'ssi', [$fdate, $tdate, $userid]);
+$rows = $dateError === '' ? db_rows($con, "SELECT month(ExpenseDate) as rptmonth, year(ExpenseDate) as rptyear, SUM(ExpenseCost) as totalmonth FROM tblexpense where ExpenseDate BETWEEN ? and ? and UserId = ? group by month(ExpenseDate), year(ExpenseDate)", 'ssi', [$fdate, $tdate, $userid]) : [];
 $cnt=1;
 foreach ($rows as $row) {
 

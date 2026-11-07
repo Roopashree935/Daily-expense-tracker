@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 include('includes/dbconnection.php');
 require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/validate.php';
 require_once __DIR__ . '/includes/password.php';
 
 // Shown in the red message line; empty means "nothing to report".
@@ -10,9 +11,20 @@ $msg = '';
 if(isset($_POST['submit']))
   {
     csrf_check();
-    $contactno=$_SESSION['contactno'];
-    $email=$_SESSION['email'];
-    $password=hash_password($_POST['newpassword']);
+    $contactno=$_SESSION['contactno'] ?? '';
+    $email=$_SESSION['email'] ?? '';
+    $newpassword=$_POST['newpassword'] ?? '';
+    $confirmpassword=$_POST['confirmpassword'] ?? '';
+
+    if ($email === '' || $contactno === '') {
+      // Someone opened this page without going through forgot-password.php.
+      $msg="Please start again from the Forgot Password page.";
+    } elseif (strlen($newpassword) < 8) {
+      $msg="Your password must be at least 8 characters long.";
+    } elseif ($newpassword !== $confirmpassword) {
+      $msg="New Password and Confirm Password field does not match";
+    } else {
+    $password=hash_password($newpassword);
 
         $query=db_exec($con, "update tbluser set Password = ? where Email = ? and MobileNumber = ?", 'sss', [$password, $email, $contactno]);
    if($query !== false)
@@ -20,7 +32,7 @@ if(isset($_POST['submit']))
 echo "<script>alert('Password successfully changed');</script>";
 session_destroy();
    }
-  
+    }
   }
   ?>
 <!DOCTYPE html>

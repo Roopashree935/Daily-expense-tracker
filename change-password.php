@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
 require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/validate.php';
 require_once __DIR__ . '/includes/password.php';
 require_login();
 
@@ -11,8 +12,15 @@ if(isset($_POST['submit']))
 {
     csrf_check();
 $userid=$_SESSION['detsuid'];
-$cpassword=$_POST['currentpassword'];
-$newpassword=$_POST['newpassword'];
+$cpassword=$_POST['currentpassword'] ?? '';
+$newpassword=$_POST['newpassword'] ?? '';
+$confirmpassword=$_POST['confirmpassword'] ?? '';
+
+if (strlen($newpassword) < 8) {
+$msg="Your new password must be at least 8 characters long.";
+} elseif ($newpassword !== $confirmpassword) {
+$msg="New Password and Confirm Password field does not match";
+} else {
 $row=db_row($con, "select ID, Password from tbluser where ID = ?", 'i', [(int) $userid]);
 if($row !== null && verify_password($cpassword, (string) $row['Password'])){
 $ret=db_exec($con, "update tbluser set Password = ? where ID = ?", 'si', [hash_password($newpassword), (int) $userid]);
@@ -20,6 +28,7 @@ $msg= "Your password successully changed";
 } else {
 
 $msg="Your current password is wrong";
+}
 }
 
 

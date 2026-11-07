@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
 require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/validate.php';
 require_login();
 
 // Shown in the red message line; empty means "nothing to report".
@@ -11,9 +12,17 @@ if(isset($_POST['submit']))
   {
     csrf_check();
   	$userid=$_SESSION['detsuid'];
-    $dateexpense=$_POST['dateexpense'];
-     $item=$_POST['item'];
-     $costitem=$_POST['costitem'];
+    $dateexpense=trim($_POST['dateexpense'] ?? '');
+    $item=trim($_POST['item'] ?? '');
+    $costitem=trim($_POST['costitem'] ?? '');
+
+    if (!is_valid_date($dateexpense)) {
+      $msg="Please choose a valid date (YYYY-MM-DD).";
+    } elseif (!is_valid_item($item)) {
+      $msg="Please enter an item name (up to 200 characters).";
+    } elseif (!is_valid_amount($costitem)) {
+      $msg="Please enter the cost as a number, for example 250 or 249.50.";
+    } else {
     $query=db_exec($con, "insert into tblexpense(UserId, ExpenseDate, ExpenseItem, ExpenseCost) values (?, ?, ?, ?)", 'isss', [(int) $userid, $dateexpense, $item, $costitem]);
 if($query !== false){
 echo "<script>alert('Expense has been added');</script>";
@@ -22,7 +31,7 @@ echo "<script>window.location.href='manage-expense.php'</script>";
 echo "<script>alert('Something went wrong. Please try again');</script>";
 
 }
-  
+    }
 }
   ?>
 <!DOCTYPE html>

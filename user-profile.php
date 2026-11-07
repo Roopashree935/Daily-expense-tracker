@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
 require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/validate.php';
 require_login();
 
 // Shown in the red message line; empty means "nothing to report".
@@ -10,9 +11,14 @@ $msg = '';
   {
     csrf_check();
     $userid=$_SESSION['detsuid'];
-    $fullname=$_POST['fullname'];
-  $mobno=$_POST['contactnumber'];
+    $fullname=trim($_POST['fullname'] ?? '');
+    $mobno=trim($_POST['contactnumber'] ?? '');
 
+    if (!is_valid_name($fullname)) {
+      $msg="Please enter your full name.";
+    } elseif (!is_valid_mobile($mobno)) {
+      $msg="Please enter a 10-digit mobile number.";
+    } else {
      $query=db_exec($con, "update tbluser set FullName = ?, MobileNumber = ? where ID = ?", 'ssi', [$fullname, $mobno, (int) $userid]);
     if ($query !== false) {
     $msg="User profile has been updated.";
@@ -20,6 +26,7 @@ $msg = '';
   else
     {
       $msg="Something Went Wrong. Please try again.";
+    }
     }
   }
   ?>
