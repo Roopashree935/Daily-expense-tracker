@@ -12,13 +12,20 @@ if(isset($_POST['delid']))
 {
 csrf_check();
 $rowid=intval($_POST['delid']);
-$query=db_exec($con, "delete from tblexpense where ID = ?", 'i', [$rowid]);
-if($query !== false){
-echo "<script>alert('Record successfully deleted');</script>";
+$userid=(int) $_SESSION['detsuid'];
+
+// The user id is part of the WHERE clause, not just the id. Without it any
+// logged-in user could delete anybody's expense by sending a different number:
+// the form only shows their own rows, but nothing stopped a hand-written POST.
+$query=db_exec($con, "delete from tblexpense where ID = ? and UserId = ?", 'ii', [$rowid, $userid]);
+if($query === false){
+echo "<script>alert('Something went wrong. Please try again');</script>";
+} elseif($query === 0){
+echo "<script>alert('Record not found');</script>";
 echo "<script>window.location.href='manage-expense.php'</script>";
 } else {
-echo "<script>alert('Something went wrong. Please try again');</script>";
-
+echo "<script>alert('Record successfully deleted');</script>";
+echo "<script>window.location.href='manage-expense.php'</script>";
 }
 
 }
