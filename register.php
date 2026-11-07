@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 include('includes/dbconnection.php');
+require_once __DIR__ . '/includes/password.php';
 
 // Shown in the red message line; empty means "nothing to report".
 $msg = '';
@@ -9,7 +10,7 @@ if(isset($_POST['submit']))
     $fname=$_POST['name'];
     $mobno=$_POST['mobilenumber'];
     $email=$_POST['email'];
-    $password=md5($_POST['password']);
+    $password=hash_password($_POST['password']);
 
     $result=db_row($con, "select Email from tbluser where Email = ?", 's', [$email]);
     if($result !== null){

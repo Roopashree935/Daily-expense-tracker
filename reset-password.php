@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 include('includes/dbconnection.php');
+require_once __DIR__ . '/includes/password.php';
 
 // Shown in the red message line; empty means "nothing to report".
 $msg = '';
@@ -9,7 +10,7 @@ if(isset($_POST['submit']))
   {
     $contactno=$_SESSION['contactno'];
     $email=$_SESSION['email'];
-    $password=md5($_POST['newpassword']);
+    $password=hash_password($_POST['newpassword']);
 
         $query=db_exec($con, "update tbluser set Password = ? where Email = ? and MobileNumber = ?", 'sss', [$password, $email, $contactno]);
    if($query !== false)

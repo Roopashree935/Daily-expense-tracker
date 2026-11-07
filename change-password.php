@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/password.php';
 require_login();
 
 // Shown in the red message line; empty means "nothing to report".
@@ -8,11 +9,11 @@ $msg = '';
 if(isset($_POST['submit']))
 {
 $userid=$_SESSION['detsuid'];
-$cpassword=md5($_POST['currentpassword']);
-$newpassword=md5($_POST['newpassword']);
-$row=db_row($con, "select ID from tbluser where ID = ? and Password = ?", 'is', [(int) $userid, $cpassword]);
-if($row !== null){
-$ret=db_exec($con, "update tbluser set Password = ? where ID = ?", 'si', [$newpassword, (int) $userid]);
+$cpassword=$_POST['currentpassword'];
+$newpassword=$_POST['newpassword'];
+$row=db_row($con, "select ID, Password from tbluser where ID = ?", 'i', [(int) $userid]);
+if($row !== null && verify_password($cpassword, (string) $row['Password'])){
+$ret=db_exec($con, "update tbluser set Password = ? where ID = ?", 'si', [hash_password($newpassword), (int) $userid]);
 $msg= "Your password successully changed"; 
 } else {
 

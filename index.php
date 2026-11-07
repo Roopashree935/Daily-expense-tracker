@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/password.php';
 
 // Shown in the red message line; empty means "nothing to report".
 $msg = '';
@@ -8,9 +9,16 @@ $msg = '';
 if(isset($_POST['login']))
   {
     $email=$_POST['email'];
-    $password=md5($_POST['password']);
-    $ret=db_row($con, "select ID from tbluser where Email = ? and Password = ?", 'ss', [$email, $password]);
-    if($ret !== null){
+    $password=$_POST['password'];
+    // Fetch by email only; the password is checked in PHP, not in SQL.
+    $ret=db_row($con, "select ID, Password from tbluser where Email = ?", 's', [$email]);
+    if($ret !== null && verify_password($password, (string) $ret['Password'])){
+      // Legacy md5 row? Replace it with a bcrypt hash while we have the plain
+      // password in hand, so existing users are upgraded without a reset.
+      if (password_needs_upgrade((string) $ret['Password'])) {
+        db_exec($con, "update tbluser set Password = ? where ID = ?", 'si',
+                [hash_password($password), (int) $ret['ID']]);
+      }
       login_user((int) $ret['ID']);
      header('location:dashboard.php');
     }
