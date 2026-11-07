@@ -1,0 +1,17 @@
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Logs
+*.log
+
+# Environment files — keep real credentials out of the repository
+.env
+.env.*
+
+# SASS build cache
+.sass-cache/
+*.scssc
