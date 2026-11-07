@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 include('includes/dbconnection.php');
+require_once __DIR__ . '/includes/csrf.php';
 require_once __DIR__ . '/includes/password.php';
 
 // Shown in the red message line; empty means "nothing to report".
@@ -8,6 +9,7 @@ $msg = '';
 
 if(isset($_POST['submit']))
   {
+    csrf_check();
     $contactno=$_SESSION['contactno'];
     $email=$_SESSION['email'];
     $password=hash_password($_POST['newpassword']);
@@ -56,6 +58,7 @@ return true;
     echo $msg;
   }  ?> </p>
 					<form role="form" action="" method="post" name="changepassword" onsubmit="return checkpass()">
+							<?php echo csrf_field(); ?>
 						<fieldset>
 							<div class="form-group">
 								<input class="form-control" placeholder="Password" name="newpassword" type="password" value="" required="true">

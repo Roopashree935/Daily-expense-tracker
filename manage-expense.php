@@ -1,15 +1,17 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/csrf.php';
 require_login();
 
 // Shown in the red message line; empty means "nothing to report".
 $msg = '';
 
 //code deletion
-if(isset($_GET['delid']))
+if(isset($_POST['delid']))
 {
-$rowid=intval($_GET['delid']);
+csrf_check();
+$rowid=intval($_POST['delid']);
 $query=db_exec($con, "delete from tblexpense where ID = ?", 'i', [$rowid]);
 if($query !== false){
 echo "<script>alert('Record successfully deleted');</script>";
@@ -96,7 +98,12 @@ foreach ($rows as $row) {
                   <td><?php  echo $row['ExpenseItem'];?></td>
                   <td><?php  echo $row['ExpenseCost'];?></td>
                   <td><?php  echo $row['ExpenseDate'];?></td>
-                  <td><a href="manage-expense.php?delid=<?php echo $row['ID'];?>">Delete</a>
+                  <td>
+                    <form method="post" action="manage-expense.php" style="margin:0">
+                      <?php echo csrf_field(); ?>
+                      <input type="hidden" name="delid" value="<?php echo (int) $row['ID']; ?>">
+                      <button type="submit" class="btn btn-link" style="padding:0">Delete</button>
+                    </form>
                 </tr>
                 <?php 
 $cnt=$cnt+1;

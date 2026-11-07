@@ -1,7 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/csrf.php';
 require_login();
+
+// Reached by POST from the report form; a POST must carry this session's token.
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_check();
+}
 
   
 

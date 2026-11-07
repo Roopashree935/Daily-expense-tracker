@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/csrf.php';
 require_once __DIR__ . '/includes/password.php';
 require_login();
 
@@ -8,6 +9,7 @@ require_login();
 $msg = '';
 if(isset($_POST['submit']))
 {
+    csrf_check();
 $userid=$_SESSION['detsuid'];
 $cpassword=$_POST['currentpassword'];
 $newpassword=$_POST['newpassword'];
@@ -90,6 +92,7 @@ foreach ($rows as $row) {
 
 ?>
 							<form role="form" method="post" action="" name="changepassword" onsubmit="return checkpass();">
+							<?php echo csrf_field(); ?>
 								<div class="form-group">
 									<label>Current Password</label>
 									<input type="password" name="currentpassword" class=" form-control" required= "true" value="">

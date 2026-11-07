@@ -1,12 +1,14 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 include('includes/dbconnection.php');
+require_once __DIR__ . '/includes/csrf.php';
 require_once __DIR__ . '/includes/password.php';
 
 // Shown in the red message line; empty means "nothing to report".
 $msg = '';
 if(isset($_POST['submit']))
   {
+    csrf_check();
     $fname=$_POST['name'];
     $mobno=$_POST['mobilenumber'];
     $email=$_POST['email'];
@@ -61,6 +63,7 @@ return true;
 				<div class="panel-heading">Sign Up</div>
 				<div class="panel-body">
 					<form role="form" action="" method="post" id="" name="signup" onsubmit="return checkpass();">
+							<?php echo csrf_field(); ?>
 						<p style="font-size:16px; color:red" align="center"> <?php if($msg){
     echo $msg;
   }  ?> </p>

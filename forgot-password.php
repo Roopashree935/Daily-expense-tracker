@@ -1,12 +1,14 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 include('includes/dbconnection.php');
+require_once __DIR__ . '/includes/csrf.php';
 
 // Shown in the red message line; empty means "nothing to report".
 $msg = '';
 
 if(isset($_POST['submit']))
   {
+    csrf_check();
     $contactno=$_POST['contactno'];
     $email=$_POST['email'];
 
@@ -44,6 +46,7 @@ if(isset($_POST['submit']))
     echo $msg;
   }  ?> </p>
 					<form role="form" action="" method="post" id="" name="login">
+							<?php echo csrf_field(); ?>
 						<fieldset>
 							<div class="form-group">
 								<input class="form-control" placeholder="E-mail" name="email" type="email" autofocus="" required="true">

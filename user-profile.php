@@ -1,12 +1,14 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/csrf.php';
 require_login();
 
 // Shown in the red message line; empty means "nothing to report".
 $msg = '';
     if(isset($_POST['submit']))
   {
+    csrf_check();
     $userid=$_SESSION['detsuid'];
     $fullname=$_POST['fullname'];
   $mobno=$_POST['contactnumber'];
@@ -76,6 +78,7 @@ foreach ($rows as $row) {
 
 ?>
 							<form role="form" method="post" action="">
+							<?php echo csrf_field(); ?>
 								<div class="form-group">
 									<label>Full Name</label>
 									<input class="form-control" type="text" value="<?php  echo $row['FullName'];?>" name="fullname" required="true">

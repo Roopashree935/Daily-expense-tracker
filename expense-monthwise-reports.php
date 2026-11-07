@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/csrf.php';
 require_login();
 
 // Shown in the red message line; empty means "nothing to report".
@@ -54,6 +55,7 @@ $msg = '';
 
 
 							<form role="form" method="post" action="expense-monthwise-reports-detailed.php" name="bwdatesreport">
+								<?php echo csrf_field(); ?>
 								<div class="form-group">
 									<label>From Date</label>
 									<input class="form-control" type="date"  id="fromdate" name="fromdate" required="true">

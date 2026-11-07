@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/csrf.php';
 require_login();
 
 // Shown in the red message line; empty means "nothing to report".
@@ -8,6 +9,7 @@ $msg = '';
 
 if(isset($_POST['submit']))
   {
+    csrf_check();
   	$userid=$_SESSION['detsuid'];
     $dateexpense=$_POST['dateexpense'];
      $item=$_POST['item'];
@@ -72,6 +74,7 @@ echo "<script>alert('Something went wrong. Please try again');</script>";
 						<div class="col-md-12">
 							
 							<form role="form" method="post" action="">
+							<?php echo csrf_field(); ?>
 								<div class="form-group">
 									<label>Date of Expense</label>
 									<input class="form-control" type="date" value="" name="dateexpense" required="true">

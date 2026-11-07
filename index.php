@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/csrf.php';
 require_once __DIR__ . '/includes/password.php';
 
 // Shown in the red message line; empty means "nothing to report".
@@ -8,6 +9,7 @@ $msg = '';
 
 if(isset($_POST['login']))
   {
+    csrf_check();
     $email=$_POST['email'];
     $password=$_POST['password'];
     // Fetch by email only; the password is checked in PHP, not in SQL.
@@ -51,6 +53,7 @@ if(isset($_POST['login']))
     echo $msg;
   }  ?> </p>
 					<form role="form" action="" method="post" id="" name="login">
+							<?php echo csrf_field(); ?>
 						<fieldset>
 							<div class="form-group">
 								<input class="form-control" placeholder="E-mail" name="email" type="email" autofocus="" required="true">
