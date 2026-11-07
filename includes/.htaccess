@@ -1,0 +1,14 @@
+# Everything in this folder is included by a page, never requested by a browser.
+# includes/config.php in particular holds the database password.
+# Denying here (rather than in the root .htaccess) works whether the app is at
+# the web root or in a subfolder such as htdocs/daily-expense-tracker.
+
+<IfModule mod_authz_core.c>
+    # Apache 2.4
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    # Apache 2.2
+    Order allow,deny
+    Deny from all
+</IfModule>
