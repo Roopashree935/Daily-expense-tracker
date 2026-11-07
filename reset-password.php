@@ -1,6 +1,5 @@
 <?php
-session_start();
-error_reporting(0);
+require_once __DIR__ . '/includes/auth.php';
 include('includes/dbconnection.php');
 error_reporting(0);
 
