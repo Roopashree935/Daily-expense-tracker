@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/escape.php';
 require_once __DIR__ . '/includes/csrf.php';
 require_once __DIR__ . '/includes/validate.php';
 require_login();
@@ -74,9 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<h5 align="center" style="color:blue">Yearwise Expense Report from <?php echo $fdate?> to <?php echo $tdate?></h5>
+<h5 align="center" style="color:blue">Yearwise Expense Report from <?php echo e($fdate)?> to <?php echo e($tdate)?></h5>
 <?php if ($dateError !== '') { ?>
-<p style="color:red" align="center"><?php echo $dateError; ?></p>
+<p style="color:red" align="center"><?php echo e($dateError); ?></p>
 <?php } ?>
 <hr />
                                     <table id="datatable" class="table table-bordered dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
@@ -98,10 +99,10 @@ foreach ($rows as $row) {
 ?>
               
                 <tr>
-                  <td><?php echo $cnt;?></td>
+                  <td><?php echo e($cnt);?></td>
             
-                  <td><?php  echo $row['rptyear'];?></td>
-                  <td><?php  echo $ttlsl=$row['totalyear'];?></td>
+                  <td><?php  echo e($row['rptyear']);?></td>
+                  <td><?php $ttlsl = $row['totalyear']; echo e($ttlsl); ?></td>
            
            
                 </tr>
@@ -112,7 +113,7 @@ $cnt=$cnt+1;
 
  <tr>
   <th colspan="2" style="text-align:center">Grand Total</th>     
-  <td><?php echo $totalsexp;?></td>
+  <td><?php echo e($totalsexp);?></td>
  </tr>     
 
                                     </table>

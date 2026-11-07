@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
 require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/escape.php';
 require_login();
 
 // Shown in the red message line; empty means "nothing to report".
@@ -76,7 +77,7 @@ echo "<script>window.location.href='manage-expense.php'</script>";
 					<div class="panel-heading">Expense</div>
 					<div class="panel-body">
 						<p style="font-size:16px; color:red" align="center"> <?php if($msg){
-    echo $msg;
+    echo e($msg);
   }  ?> </p>
 						<div class="col-md-12">
 							
@@ -100,11 +101,11 @@ foreach ($rows as $row) {
 ?>
               <tbody>
                 <tr>
-                  <td><?php echo $cnt;?></td>
+                  <td><?php echo e($cnt);?></td>
               
-                  <td><?php  echo $row['ExpenseItem'];?></td>
-                  <td><?php  echo $row['ExpenseCost'];?></td>
-                  <td><?php  echo $row['ExpenseDate'];?></td>
+                  <td><?php  echo e($row['ExpenseItem']);?></td>
+                  <td><?php  echo e($row['ExpenseCost']);?></td>
+                  <td><?php  echo e($row['ExpenseDate']);?></td>
                   <td>
                     <form method="post" action="manage-expense.php" style="margin:0">
                       <?php echo csrf_field(); ?>

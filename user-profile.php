@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
 require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/escape.php';
 require_once __DIR__ . '/includes/validate.php';
 require_login();
 
@@ -74,7 +75,7 @@ $msg = '';
 					<div class="panel-heading">Profile</div>
 					<div class="panel-body">
 						<p style="font-size:16px; color:red" align="center"> <?php if($msg){
-    echo $msg;
+    echo e($msg);
   }  ?> </p>
 						<div class="col-md-12">
 							 <?php
@@ -88,20 +89,20 @@ foreach ($rows as $row) {
 							<?php echo csrf_field(); ?>
 								<div class="form-group">
 									<label>Full Name</label>
-									<input class="form-control" type="text" value="<?php  echo $row['FullName'];?>" name="fullname" required="true">
+									<input class="form-control" type="text" value="<?php  echo e($row['FullName']);?>" name="fullname" required="true">
 								</div>
 								<div class="form-group">
 									<label>Email</label>
-<input type="email" class="form-control" name="email" value="<?php  echo $row['Email'];?>" required="true" readonly="true">
+<input type="email" class="form-control" name="email" value="<?php  echo e($row['Email']);?>" required="true" readonly="true">
 								</div>
 								
 								<div class="form-group">
 									<label>Mobile Number</label>
-									<input class="form-control" type="text" value="<?php  echo $row['MobileNumber'];?>" required="true" name="contactnumber" maxlength="10">
+									<input class="form-control" type="text" value="<?php  echo e($row['MobileNumber']);?>" required="true" name="contactnumber" maxlength="10">
 								</div>
 								<div class="form-group">
 									<label>Registration Date</label>
-									<input class="form-control" name="regdate" type="text" value="<?php  echo $row['RegDate'];?>" readonly="true">
+									<input class="form-control" name="regdate" type="text" value="<?php  echo e($row['RegDate']);?>" readonly="true">
 								</div>
 								
 								<div class="form-group has-success">

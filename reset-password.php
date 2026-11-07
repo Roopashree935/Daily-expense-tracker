@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 include('includes/dbconnection.php');
 require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/escape.php';
 require_once __DIR__ . '/includes/validate.php';
 require_once __DIR__ . '/includes/password.php';
 
@@ -67,7 +68,7 @@ return true;
 				<div class="panel-heading">Rest Password</div>
 				<div class="panel-body">
 					<p style="font-size:16px; color:red" align="center"> <?php if($msg){
-    echo $msg;
+    echo e($msg);
   }  ?> </p>
 					<form role="form" action="" method="post" name="changepassword" onsubmit="return checkpass()">
 							<?php echo csrf_field(); ?>

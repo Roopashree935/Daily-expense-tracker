@@ -1,6 +1,7 @@
 <?php
 // $con and the session are already set up by the page that included this file.
 require_once __DIR__ . '/dbconnection.php';
+require_once __DIR__ . '/escape.php';
 ?>
 
 
@@ -16,7 +17,7 @@ $row = db_row($con, "select FullName from tbluser where ID = ?", 'i', [$uid]);
 $name = $row['FullName'] ?? '';
 
 ?>
-                <div class="profile-usertitle-name"><?php echo $name; ?></div>
+                <div class="profile-usertitle-name"><?php echo e($name); ?></div>
                 <div class="profile-usertitle-status"><span class="indicator label-success"></span>Online</div>
             </div>
             <div class="clear"></div>

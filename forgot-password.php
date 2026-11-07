@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 include('includes/dbconnection.php');
 require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/escape.php';
 require_once __DIR__ . '/includes/validate.php';
 
 // Shown in the red message line; empty means "nothing to report".
@@ -50,7 +51,7 @@ if(isset($_POST['submit']))
 				<div class="panel-heading">Log in</div>
 				<div class="panel-body">
 					<p style="font-size:16px; color:red" align="center"> <?php if($msg){
-    echo $msg;
+    echo e($msg);
   }  ?> </p>
 					<form role="form" action="" method="post" id="" name="login">
 							<?php echo csrf_field(); ?>
