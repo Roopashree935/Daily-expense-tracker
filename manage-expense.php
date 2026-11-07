@@ -10,8 +10,8 @@ $msg = '';
 if(isset($_GET['delid']))
 {
 $rowid=intval($_GET['delid']);
-$query=mysqli_query($con,"delete from tblexpense where ID='$rowid'");
-if($query){
+$query=db_exec($con, "delete from tblexpense where ID = ?", 'i', [$rowid]);
+if($query !== false){
 echo "<script>alert('Record successfully deleted');</script>";
 echo "<script>window.location.href='manage-expense.php'</script>";
 } else {
@@ -84,9 +84,9 @@ echo "<script>alert('Something went wrong. Please try again');</script>";
               </thead>
               <?php
               $userid=$_SESSION['detsuid'];
-$ret=mysqli_query($con,"select * from tblexpense where UserId='$userid'");
+$rows=db_rows($con, "select * from tblexpense where UserId = ?", 'i', [(int) $userid]);
 $cnt=1;
-while ($row=mysqli_fetch_array($ret)) {
+foreach ($rows as $row) {
 
 ?>
               <tbody>

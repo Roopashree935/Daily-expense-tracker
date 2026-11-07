@@ -70,10 +70,10 @@ $totalsexp = 0;
                                         </tr>
                                         </thead>
  <?php
-$userid=$_SESSION['detsuid'];
-$ret=mysqli_query($con,"SELECT ExpenseDate,SUM(ExpenseCost) as totaldaily FROM `tblexpense`  where (ExpenseDate BETWEEN '$fdate' and '$tdate') && (UserId='$userid') group by ExpenseDate");
+$userid = (int) $_SESSION['detsuid'];
+$rows = db_rows($con, "SELECT ExpenseDate, SUM(ExpenseCost) as totaldaily FROM tblexpense where ExpenseDate BETWEEN ? and ? and UserId = ? group by ExpenseDate", 'ssi', [$fdate, $tdate, $userid]);
 $cnt=1;
-while ($row=mysqli_fetch_array($ret)) {
+foreach ($rows as $row) {
 
 ?>
               

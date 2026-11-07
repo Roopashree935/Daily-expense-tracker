@@ -12,8 +12,8 @@ if(isset($_POST['submit']))
     $dateexpense=$_POST['dateexpense'];
      $item=$_POST['item'];
      $costitem=$_POST['costitem'];
-    $query=mysqli_query($con, "insert into tblexpense(UserId,ExpenseDate,ExpenseItem,ExpenseCost) value('$userid','$dateexpense','$item','$costitem')");
-if($query){
+    $query=db_exec($con, "insert into tblexpense(UserId, ExpenseDate, ExpenseItem, ExpenseCost) values (?, ?, ?, ?)", 'isss', [(int) $userid, $dateexpense, $item, $costitem]);
+if($query !== false){
 echo "<script>alert('Expense has been added');</script>";
 echo "<script>window.location.href='manage-expense.php'</script>";
 } else {

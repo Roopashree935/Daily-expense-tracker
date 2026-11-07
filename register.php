@@ -11,14 +11,13 @@ if(isset($_POST['submit']))
     $email=$_POST['email'];
     $password=md5($_POST['password']);
 
-    $ret=mysqli_query($con, "select Email from tbluser where Email='$email' ");
-    $result=mysqli_fetch_array($ret);
-    if($result>0){
+    $result=db_row($con, "select Email from tbluser where Email = ?", 's', [$email]);
+    if($result !== null){
 $msg="This email  associated with another account";
     }
     else{
-    $query=mysqli_query($con, "insert into tbluser(FullName, MobileNumber, Email,  Password) value('$fname', '$mobno', '$email', '$password' )");
-    if ($query) {
+    $query=db_exec($con, "insert into tbluser(FullName, MobileNumber, Email, Password) values (?, ?, ?, ?)", 'ssss', [$fname, $mobno, $email, $password]);
+    if ($query !== false) {
     $msg="You have successfully registered";
   }
   else
