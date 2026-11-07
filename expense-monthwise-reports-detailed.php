@@ -50,9 +50,12 @@ require_login();
 						<div class="col-md-12">
 					
 <?php
-$fdate=$_POST['fromdate'];
- $tdate=$_POST['todate'];
-$rtype=$_POST['requesttype'];
+// The page is also reachable without a POST (someone opening the URL directly),
+// so every field needs a default before it is used.
+$fdate = $_POST['fromdate'] ?? '';
+$tdate = $_POST['todate'] ?? '';
+$rtype = $_POST['requesttype'] ?? '';
+$totalsexp = 0;
 ?>
 <h5 align="center" style="color:blue">Monthwise Expense Report from <?php echo $fdate?> to <?php echo $tdate?></h5>
 <hr />

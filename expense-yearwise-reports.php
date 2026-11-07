@@ -2,6 +2,9 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/dbconnection.php';
 require_login();
+
+// Shown in the red message line; empty means "nothing to report".
+$msg = '';
 ?>
 <!DOCTYPE html>
 <html>

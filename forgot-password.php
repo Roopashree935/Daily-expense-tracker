@@ -1,7 +1,9 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 include('includes/dbconnection.php');
-error_reporting(0);
+
+// Shown in the red message line; empty means "nothing to report".
+$msg = '';
 
 if(isset($_POST['submit']))
   {
