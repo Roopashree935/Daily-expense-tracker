@@ -1,114 +1,263 @@
 # Daily Expense Tracker
 
-A web-based expense tracking system built with **PHP and MySQL**. Users register, log in, record daily
-expenses, and review them through date-wise, month-wise and year-wise reports on a dashboard.
+A small web application for recording day-to-day expenses and reviewing them as
+date-wise, month-wise and year-wise reports. Written in **procedural PHP with
+mysqli** against **MySQL / MariaDB** — no framework, no Composer, no build step.
 
-> **Status:** the folder skeleton is in place. The application files are being uploaded folder by folder —
-> see [What still needs uploading](#what-still-needs-uploading) for the exact map.
+It began as a college project and has since been through a security and
+maintenance pass (see [What changed](#what-changed)).
+
+| Login | Dashboard |
+|---|---|
+| ![Login page](docs/screenshots/01-login.png) | ![Dashboard with the expense summary cards](docs/screenshots/02-dashboard.png) |
+
+| Manage expenses | Date-wise report |
+|---|---|
+| ![Expense list with per-row delete](docs/screenshots/03-manage-expense.png) | ![Date-wise report with a grand total](docs/screenshots/04-datewise-report.png) |
 
 ---
+
+## What it does
+
+* Register with name, email, mobile number and password; log in and out.
+* Forgot-password flow: email + mobile number, then set a new password.
+* Add an expense (date, item, cost); list them 10 to a page; delete one.
+* Dashboard cards: today, yesterday, last 7 days, last 30 days, this year, all time.
+* Reports: date-wise, month-wise, year-wise, each with a grand total for the range.
+* Profile (name and mobile) and change-password pages.
 
 ## Tech stack
 
-| Layer | What's used |
+| Layer | What is used |
 |---|---|
-| Server | PHP (procedural, `mysqli`) |
+| Server | PHP 8.2 (procedural, `mysqli` prepared statements) |
 | Database | MySQL / MariaDB — schema in `database/detsdb.sql` |
-| Front end | Bootstrap 3, jQuery, Font Awesome, Flot (charting) |
-| Bundled libraries | `assets/plugins/`, `css/`, `js/`, `fonts/` (vendored, unmodified) |
+| Front end | Bootstrap 3.3, jQuery 1.11, Font Awesome 4.7, Chart.js, EasyPieChart |
+| Bundled assets | `css/`, `js/`, `fonts/`, `sass/` — all vendored locally, no CDN |
 
----
+`mysqli_stmt_get_result()` is used by `includes/db.php`, so the `mysqlnd` driver
+must be enabled. It is the default in XAMPP, WAMP, Debian/Ubuntu `php-mysql` and
+on InfinityFree.
 
 ## Repository layout
 
 ```
 .
-├── index.php                  login page            ← upload (root)
-├── register.php  logout.php   user session
-├── dashboard.php              landing page after login
-├── add-expense.php            record an expense
-├── manage-expense.php         list / edit / delete expenses
-├── expense-reports.php        report index
-├── expense-datewise-reports.php          (+ -detailed)
-├── expense-monthwise-reports.php         (+ -detailed)
-├── expense-yearwise-reports.php          (+ -detailed)
-├── user-profile.php  change-password.php  forgot-password.php  reset-password.php
+├── index.php  register.php  logout.php
+├── dashboard.php
+├── add-expense.php  manage-expense.php
+├── expense-reports.php                    report chooser
+├── expense-{datewise,monthwise,yearwise}-reports.php           (+ -detailed)
+├── user-profile.php  change-password.php
+├── forgot-password.php  reset-password.php
 │
-├── includes/                  dbconnection.php, header.php, sidebar.php, footer.php
-├── database/detsdb.sql        schema + seed data              ✔ committed
-├── docs/                      synopsis.pdf
-├── assets/images/             logos, backgrounds, avatars
-├── assets/plugins/            vendored JS libraries
-├── css/  js/  fonts/  sass/   theme assets
-└── tables/                    data1.json, data2.json
-```
-
----
-
-## What still needs uploading
-
-Every folder below contains a `.gitkeep` placeholder. Drop the listed files in, then delete the
-`.gitkeep`. Totals: **219 files**.
-
-| Folder | What goes here | Files | Notes |
-|---|---|---|---|
-| `./` (repo root) | All 18 `*.php` pages | 18 | `index.php`, `dashboard.php`, `add-expense.php`, `manage-expense.php`, the 8 `expense-*.php` report pages, `register.php`, `login`/`logout`, `user-profile.php`, `change-password.php`, `forgot-password.php`, `reset-password.php` |
-| `includes/` | `dbconnection.php`, `header.php`, `sidebar.php`, `footer.php` | 4 | **Required** — every page includes these |
-| `database/` | `detsdb.sql` | 1 | ✔ already committed |
-| `docs/` | `synopsis.pdf` | 1 | Project synopsis |
-| `assets/images/` | Logos, background images, user avatars | 13 | Binary — upload as files |
-| `assets/plugins/` | Bootstrap, jQuery, Flot, gmaps, sticky-kit, etc. | 142 | **Bulk of the repo (~5 MB).** Unmodified third-party libraries |
-| `css/` | Bootstrap + theme stylesheets and source maps | 13 | |
-| `js/` | Page scripts | 13 | |
-| `fonts/` | Font Awesome and Glyphicons webfonts | 11 | Binary |
-| `sass/` | `styles.scss` | 1 | Theme source |
-| `tables/` | `data1.json`, `data2.json` | 2 | Table demo data |
-
-**Uploading tip:** GitHub's web uploader accepts at most **100 files per drag-and-drop**, and this
-project has 219. Either upload folder by folder, or clone the repo and copy everything in at once:
-
-```bash
-git clone https://github.com/Roopashree935/Daily-expense-tracker.git
-cd Daily-expense-tracker
-# copy the project files into this directory
-git add .
-git commit -m "feat: add Daily Expense Tracker source"
-git push origin master
+├── includes/
+│   ├── dbconnection.php   loads config, sets error handling, opens $con
+│   ├── config.example.php committed template — copy it to config.php
+│   ├── config.php         your real credentials (git-ignored, not in the repo)
+│   ├── db.php             db_rows() / db_row() / db_exec() — prepared statements
+│   ├── auth.php           is_logged_in() / require_login() / login_user()
+│   ├── password.php       hash_password() / verify_password() + md5 migration
+│   ├── csrf.php           csrf_token() / csrf_field() / csrf_check()
+│   ├── validate.php       date, amount, mobile, email, name checks
+│   ├── escape.php         e() — htmlspecialchars for output
+│   ├── header.php  sidebar.php  footer.php
+│   └── .htaccess          denies direct HTTP access to this folder
+│
+├── database/detsdb.sql    schema + sample rows
+├── docs/synopsis.pdf      project synopsis
+├── docs/screenshots/      the images above
+├── tests/smoke.php        php tests/smoke.php — is the install wired up?
+├── .htaccess              security headers, no directory listings
+├── css/  js/  fonts/  sass/  tables/
+└── README.md
 ```
 
 ---
 
 ## Running it locally (XAMPP)
 
-1. Install **XAMPP** (or WAMP/LAMP) and start **Apache** and **MySQL**.
-2. Copy the project folder into the web root — `htdocs` for XAMPP, `www` for WAMP,
-   `/var/www/html` for LAMP. The folder name becomes part of the URL.
-3. Open <http://localhost/phpmyadmin> and create a database named **`detsdb`**.
-4. Select `detsdb` → **Import** → choose `database/detsdb.sql` → **Go**.
-5. Check the connection settings in `includes/dbconnection.php` and adjust host, user and password.
-6. Visit <http://localhost/Daily-expense-tracker/> (use whatever folder name you used in step 2).
+1. Install [XAMPP](https://www.apachefriends.org/) and start **Apache** and
+   **MySQL** from the control panel.
+2. Copy this folder into `htdocs`, e.g. `C:\xampp\htdocs\daily-expense-tracker`.
+3. Create the database and import the schema. Either use phpMyAdmin
+   (`http://localhost/phpmyadmin` → New → database name `detsdb` → Import →
+   `database/detsdb.sql`), or from a terminal:
 
-### Demo login
+   ```bash
+   mysql -u root -e "CREATE DATABASE detsdb"
+   mysql -u root detsdb < database/detsdb.sql
+   ```
 
+4. Open `http://localhost/daily-expense-tracker/`.
+
+That is all: `includes/config.php` does not exist yet, so
+`includes/dbconnection.php` falls back to `includes/config.example.php`, whose
+values are the stock XAMPP ones (`localhost`, user `root`, empty password,
+database `detsdb`). Nothing to edit to get started.
+
+**Demo account:** `testuser@gmail.com` / `Test@123` (also `rahul@test.com` and
+`johndoe12@gmail.com` with the same password). These are seeded demo rows — see
+[Limitations](#limitations).
+
+### Using your own database credentials
+
+```bash
+cp includes/config.example.php includes/config.php
 ```
-Email:    testuser@gmail.com
-Password: Test@123
+
+Then edit `includes/config.php`:
+
+```php
+return [
+    'db_host' => 'localhost',
+    'db_name' => 'detsdb',
+    'db_user' => 'root',
+    'db_pass' => '',
+    'db_port' => 3306,
+    'app_env' => 'dev',   // 'dev' shows PHP errors, 'prod' logs them only
+];
 ```
 
-You can also register a new account instead.
+`includes/config.php` is listed in `.gitignore`. Never commit it.
+
+### Checking the install
+
+```bash
+php tests/smoke.php
+```
+
+It connects with your config and asserts that both tables and all the columns
+the pages query are present. Exit code `0` means fine, `1` means something is
+missing and the output says what.
 
 ---
 
-## Notes and limitations
+## Deploying to free hosting (InfinityFree)
 
-This is a learning project and is **not production-ready**. Recorded honestly so nobody mistakes it
-for a hardened application:
+Free, PHP + MySQL, free SSL, no credit card. As of a September 2026 survey of
+free hosts it was still free; free tiers change, so confirm before you rely on it.
 
-- Passwords are stored with `md5()`, which is not a suitable password hash.
-- Queries are built by string interpolation rather than prepared statements, so the login,
-  registration and report pages are **not safe against SQL injection**.
-- `includes/dbconnection.php` contains local development credentials (XAMPP defaults: user `root`,
-  empty password). Replace these before running it anywhere public, and never commit real credentials.
-- No CSRF protection and no rate limiting on authentication.
+1. Sign up and create a hosting account with a free subdomain.
+2. Control panel → **MySQL Databases** → create a database. Note the **host**,
+   database name, user and password.
+3. phpMyAdmin → import `database/detsdb.sql`.
+4. `cp includes/config.example.php includes/config.php` and fill in the values
+   from step 2, with `'app_env' => 'prod'`.
+5. Upload the contents of this folder into `htdocs`, so that `index.php` sits at
+   the web root and not inside a subfolder.
+6. Visit your subdomain.
 
-Improving those would be the natural next step for this project.
+**The gotcha:** the MySQL host is **not** `localhost` on InfinityFree. It looks
+like `sqlXXX.infinityfree.com`, and it is on the database page, not in the email.
+
+Hosts to avoid for this app: Render (free database deleted after 30 days),
+Fly.io, Koyeb, 000webhost (no longer free), and Vercel / Netlify / Cloudflare
+Pages / GitHub Pages — those serve static files only and cannot run PHP.
+
+---
+
+## Security notes
+
+What is in place now, and why:
+
+| Concern | What the code does |
+|---|---|
+| SQL injection | Every query is a prepared statement (`includes/db.php`). No value is concatenated into SQL. |
+| Password storage | `password_hash()` / `password_verify()` (bcrypt). Rows still holding an old md5 hash are re-hashed automatically on the next successful login. |
+| CSRF | Every form carries a per-session token (`includes/csrf.php`) and every POST handler verifies it. The delete action is a POST, not a GET link. |
+| Session fixation | `session_regenerate_id(true)` runs on login. |
+| XSS | Every value printed into HTML goes through `e()` (`htmlspecialchars` with `ENT_QUOTES`). |
+| Access control | `require_login()` on all 13 protected pages; every query that touches expenses or the profile also filters on the session's user id. |
+| Input validation | Dates must be real `Y-m-d` dates, costs numeric, mobile numbers 10 digits, emails valid, passwords at least 8 characters (`includes/validate.php`). |
+| Credentials | Out of the repository: `includes/config.php`, git-ignored, with a committed example. |
+| Errors | `error_reporting(E_ALL)` always; display depends on `app_env`. Connection errors are logged, not echoed. |
+| Headers & files | `.htaccess` sets `X-Content-Type-Options`, `X-Frame-Options` and `Referrer-Policy`, disables directory listings, and denies `includes/` and `*.sql`. |
+
+### Limitations
+
+These are real and known — this is a learning project, not a production system.
+
+* **The forgot-password flow does not send email.** Knowing an account's email
+  and mobile number is enough to reset its password. A real deployment needs a
+  mailed one-time link with an expiry, and rate limiting.
+* **No rate limiting or lockout** on login or password reset, so passwords can be
+  guessed at whatever speed the host allows.
+* **The demo accounts and their passwords are in `database/detsdb.sql`.** Delete
+  those rows (and the sample expenses) before putting this anywhere public.
+* **`tblexpense.ExpenseCost` is a `varchar(200)`, not `DECIMAL`.** Values are
+  validated as numbers before insert, but `SUM()` still casts text to a number,
+  so a stored `99.50` prints as `99.5` in reports. A migration to
+  `DECIMAL(10,2)` is the proper fix and needs a data conversion first.
+* **`.htaccess` needs Apache.** It is ignored by `php -S` and by nginx, so under
+  those the `includes/` folder and the headers are not protected — configure the
+  web server instead.
+* **The sidebar avatar points at `http://placehold.it/...`**, an external
+  service. It fails offline and would be blocked as mixed content on an HTTPS
+  site. Replace it with a local image or remove the element.
+* **`dashboard.php` ends with a Chart.js call for a canvas (`line-chart`) that
+  the page does not contain**, so it logs one console error. The pie charts are
+  unaffected.
+* **`js/html5shiv.js` is referenced but the file is `js/html5shiv.min.js`.** It
+  only affects Internet Explorer below 9.
+* **No automated test suite.** `tests/smoke.php` checks the wiring, not the
+  pages; the page-level checks described below were run by hand with curl.
+* **Not production-ready.** No logging of security events, no audit trail, no
+  backups, no HTTPS handling of its own.
+
+---
+
+## What changed
+
+The project was reviewed and hardened in a series of small commits, each one
+concern:
+
+| Commit | What it did |
+|---|---|
+| `fix: remove whitespace before the opening PHP tag` | `manage-expense.php` began with two spaces, which broke `session_start()` and every `header()` redirect on the page. |
+| `chore: delete unreferenced images and CSS source maps` | ~1.7 MB of unused theme images and 984 KB of devtools maps, after grepping that nothing referenced them. |
+| `fix: replace the accidental session guard with an explicit one` | The `strlen($_SESSION['detsuid']==0)` guard worked by accident; `includes/auth.php` replaces it and adds `session_regenerate_id()`. |
+| `fix: move DB credentials into config.php and stop hiding PHP errors` | Credentials out of git; `error_reporting(0)` replaced by a dev/prod switch. |
+| `fix: replace every interpolated query with a prepared statement` | 30 call sites across 14 page files, plus the new `includes/db.php`. |
+| `fix: hash passwords with password_hash() and migrate the md5 rows` | bcrypt, with a migration that does not lock anyone out. |
+| `feat: add CSRF tokens to every form and to the delete action` | 12 forms, 12 handlers, delete changed from GET to POST. |
+| `feat: validate dates, amounts, mobile numbers and emails server-side` | `includes/validate.php`, applied to every write. |
+| `fix: only let a user delete their own expenses` | The delete trusted the id alone — an IDOR found during the review. |
+| `fix: escape every value printed into the page` | Stored XSS in expense items, names and report ranges. |
+| `chore: add .htaccess files for headers and to close includes/` | Headers, no listings, `includes/` and `*.sql` denied. |
+| `feat: paginate the expense list` | 10 rows per page with a stable `ORDER BY`. |
+| `test: add tests/smoke.php` | Install check with a meaningful exit code. |
+| `docs: rewrite the README` | This file. |
+
+---
+
+## How this was verified
+
+Everything below was run against PHP 8.2.32 and MariaDB 10.11.18 on Debian 12,
+with the schema imported fresh from `database/detsdb.sql`:
+
+* `php -l` on all 30 PHP files — no syntax errors.
+* A curl harness driving the running app (not committed — it needs a live
+  server and a database): 64 checks covering the login flow, both
+  SQL-injection payloads (`' OR '1'='1` and `' OR 1=1 -- `), CSRF rejection
+  (missing and wrong token), session-id rotation on login, add/list/delete an
+  expense, cross-user delete refusal, all four reports, pagination, the password
+  migration, registration, change-password, input validation, and stored-XSS
+  escaping. All 64 pass, with zero PHP warnings or notices in the server log.
+* The same app under Apache 2.4.68 with mod_php: 14 checks on the `.htaccess`
+  behaviour (headers present, `includes/` and `database/detsdb.sql` returning 403,
+  CSS and JS still served).
+* `php tests/smoke.php` in three states: schema present (16 checks, exit 0),
+  schema missing (exit 1), database missing (exit 1).
+
+Not verified: behaviour under Internet Explorer, the forgot-password flow with a
+real mail server (there is no mail server), and anything on InfinityFree — the
+deployment steps above are from their documentation, not from a live upload.
+
+---
+
+## License
+
+No licence file is included. The bundled front-end libraries
+(Bootstrap, jQuery, Font Awesome, Chart.js, EasyPieChart) keep their own
+licences; see the headers of the files in `css/` and `js/`.
