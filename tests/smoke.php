@@ -65,14 +65,17 @@ foreach ($expected as $table => $columns) {
         continue;
     }
 
+    // The alias matters: MariaDB returns information_schema column names in
+    // lower case, MySQL 8 returns them in upper case. Reading through an alias
+    // means this works on both, and the cast keeps strtolower() away from null.
     $present = db_rows(
         $con,
-        'select column_name from information_schema.columns where table_schema = database() and table_name = ?',
+        'select column_name as col from information_schema.columns where table_schema = database() and table_name = ?',
         's',
         [$table]
     );
     $names = array_map(static function (array $r): string {
-        return strtolower($r['column_name']);
+        return strtolower((string) ($r['col'] ?? ''));
     }, $present);
 
     foreach ($columns as $column) {
