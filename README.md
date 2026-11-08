@@ -1,5 +1,7 @@
 # Daily Expense Tracker
 
+[![CI](https://github.com/Roopashree935/Daily-expense-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/Roopashree935/Daily-expense-tracker/actions/workflows/ci.yml)
+
 A small web application for recording day-to-day expenses and reviewing them as
 date-wise, month-wise and year-wise reports. Written in **procedural PHP with
 mysqli** against **MySQL / MariaDB** — no framework, no Composer, no build step.
@@ -68,6 +70,8 @@ on InfinityFree.
 ├── docs/synopsis.pdf      project synopsis
 ├── docs/screenshots/      the images above
 ├── tests/smoke.php        php tests/smoke.php — is the install wired up?
+├── tests/e2e.sh           bash tests/e2e.sh — 54 checks against a running copy
+├── .github/workflows/     ci.yml (every push) and deploy-ftp.yml (manual)
 ├── .htaccess              security headers, no directory listings
 ├── css/  js/  fonts/  sass/  tables/
 └── README.md
@@ -133,7 +137,15 @@ missing and the output says what.
 
 ---
 
-## Deploying to free hosting (InfinityFree)
+## Hosting
+
+**GitHub Pages cannot host this application.** Pages serves files straight from a
+repository with no interpreter behind it, so a `.php` file is delivered as plain
+text instead of being executed — a request for `index.php` shows its own source.
+That is a property of static hosting, not a setting to switch on. The app needs a
+host that runs PHP and a MySQL database.
+
+### Deploying to free hosting (InfinityFree)
 
 Free, PHP + MySQL, free SSL, no credit card. As of a September 2026 survey of
 free hosts it was still free; free tiers change, so confirm before you rely on it.
@@ -150,6 +162,14 @@ free hosts it was still free; free tiers change, so confirm before you rely on i
 
 **The gotcha:** the MySQL host is **not** `localhost` on InfinityFree. It looks
 like `sqlXXX.infinityfree.com`, and it is on the database page, not in the email.
+
+`.github/workflows/deploy-ftp.yml` automates the upload once you have the
+account: add `FTP_SERVER`, `FTP_USERNAME`, `FTP_PASSWORD` and `APP_CONFIG_PHP`
+(the full text of your `includes/config.php`) as repository secrets, then run the
+workflow from the Actions tab. It writes `config.php` on the runner so the
+credentials never enter the repository. **That workflow has never been run** —
+there was no hosting account to run it against — so treat its first run as a
+test.
 
 Hosts to avoid for this app: Render (free database deleted after 30 days),
 Fly.io, Koyeb, 000webhost (no longer free), and Vercel / Netlify / Cloudflare
@@ -200,8 +220,10 @@ These are real and known — this is a learning project, not a production system
   unaffected.
 * **`js/html5shiv.js` is referenced but the file is `js/html5shiv.min.js`.** It
   only affects Internet Explorer below 9.
-* **No automated test suite.** `tests/smoke.php` checks the wiring, not the
-  pages; the page-level checks described below were run by hand with curl.
+* **The automated tests cover the pages, not the browser.** `tests/e2e.sh`
+  drives the app over HTTP with curl, so it proves the server's responses; it
+  cannot catch a layout break or a JavaScript error, and the `.htaccess`
+  behaviour is not covered by CI because that needs Apache.
 * **Not production-ready.** No logging of security events, no audit trail, no
   backups, no HTTPS handling of its own.
 
@@ -228,22 +250,30 @@ concern:
 | `feat: paginate the expense list` | 10 rows per page with a stable `ORDER BY`. |
 | `test: add tests/smoke.php` | Install check with a meaningful exit code. |
 | `docs: rewrite the README` | This file. |
+| `ci: lint, smoke-test and end-to-end-test every push` | `tests/e2e.sh` (54 checks) and the GitHub Actions workflow that runs it against MySQL 8. |
+| `fix: make tests/smoke.php work on MySQL 8 as well as MariaDB` | Caught by the first CI run: information_schema column names are upper case on MySQL 8. |
 
 ---
 
 ## How this was verified
 
-Everything below was run against PHP 8.2.32 and MariaDB 10.11.18 on Debian 12,
-with the schema imported fresh from `database/detsdb.sql`:
+Most of this now runs on every push and pull request — see the CI badge at the
+top of this file. The workflow lints every PHP file, imports the schema into a
+throwaway MySQL 8, runs `tests/smoke.php`, then serves the app with PHP's
+built-in server and runs `tests/e2e.sh` (54 checks), failing if the server log
+contains a single warning, notice or fatal error.
+
+What I ran by hand, on PHP 8.2.32 with MariaDB 10.11.18 on Debian 12, with the
+schema imported fresh from `database/detsdb.sql`:
 
 * `php -l` on all 30 PHP files — no syntax errors.
-* A curl harness driving the running app (not committed — it needs a live
-  server and a database): 64 checks covering the login flow, both
-  SQL-injection payloads (`' OR '1'='1` and `' OR 1=1 -- `), CSRF rejection
-  (missing and wrong token), session-id rotation on login, add/list/delete an
-  expense, cross-user delete refusal, all four reports, pagination, the password
-  migration, registration, change-password, input validation, and stored-XSS
-  escaping. All 64 pass, with zero PHP warnings or notices in the server log.
+* The same end-to-end checks as CI, plus ten more that need direct database
+  access (64 in total at the time), covering the login flow, both SQL-injection
+  payloads (`' OR '1'='1` and `' OR 1=1 -- `), CSRF rejection (missing and wrong
+  token), session-id rotation, add/list/delete, cross-user delete refusal, all
+  four reports, pagination, the password migration, registration,
+  change-password, validation and stored-XSS escaping — with zero PHP warnings
+  or notices in the server log.
 * The same app under Apache 2.4.68 with mod_php: 14 checks on the `.htaccess`
   behaviour (headers present, `includes/` and `database/detsdb.sql` returning 403,
   CSS and JS still served).

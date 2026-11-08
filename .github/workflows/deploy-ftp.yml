@@ -1,0 +1,77 @@
+name: Deploy to free PHP hosting
+
+# Uploads the app to a PHP host over FTP/FTPS. Written for InfinityFree, whose
+# htdocs is the web root, but any host that gives you FTP and PHP works.
+#
+# This workflow is manual on purpose: it overwrites files on the server, so it
+# should never fire on a push by accident.
+#
+# Before the first run, add four repository secrets
+# (Settings -> Secrets and variables -> Actions -> New repository secret):
+#
+#   FTP_SERVER    e.g. ftpupload.net            (from the host's control panel)
+#   FTP_USERNAME  e.g. if0_12345678
+#   FTP_PASSWORD  the FTP password, not the account password
+#   APP_CONFIG_PHP  the full text of your includes/config.php, with the host's
+#                   database values and 'app_env' => 'prod'. It is written on
+#                   the runner only, so the credentials never enter the repo.
+#
+# Then: Actions -> "Deploy to free PHP hosting" -> Run workflow.
+#
+# What this does NOT do: create the database or import the schema. Do that once
+# through the host's phpMyAdmin, using database/detsdb.sql.
+#
+# NOTE: this file was written but never run — there is no hosting account behind
+# it. Treat the first run as a test, and check the site afterwards.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Write includes/config.php from the secret
+        env:
+          APP_CONFIG_PHP: ${{ secrets.APP_CONFIG_PHP }}
+        run: |
+          if [ -z "$APP_CONFIG_PHP" ]; then
+            echo "::error::APP_CONFIG_PHP is not set — see the comments at the top of this workflow"
+            exit 1
+          fi
+          printf '%s\n' "$APP_CONFIG_PHP" > includes/config.php
+          php -l includes/config.php
+
+      - name: Refuse to deploy if the code does not lint
+        run: |
+          fail=0
+          while IFS= read -r file; do
+            php -l "$file" > /dev/null || fail=1
+          done < <(git ls-files '*.php')
+          exit "$fail"
+
+      - name: Upload to the host
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: ./
+          server-dir: htdocs/
+          # Never mirror-delete: a mis-set server-dir would otherwise empty the
+          # account. Files that are only added or changed is the safe default.
+          dangerous-clean-slip: false
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/.github/**
+            docs/**
+            tests/**
+            sass/**
+            README.md
