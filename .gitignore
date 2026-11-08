@@ -9,6 +9,7 @@ Thumbs.db
 *.log
 
 # Environment files — keep real credentials out of the repository
+includes/config.php
 .env
 .env.*
 

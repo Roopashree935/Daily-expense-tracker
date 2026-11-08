@@ -1,22 +1,32 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/dbconnection.php');
-if (strlen($_SESSION['detsuid']==0)) {
-  header('location:logout.php');
-  } else{
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/escape.php';
+require_login();
+
+// Shown in the red message line; empty means "nothing to report".
+$msg = '';
 
 //code deletion
-if(isset($_GET['delid']))
+if(isset($_POST['delid']))
 {
-$rowid=intval($_GET['delid']);
-$query=mysqli_query($con,"delete from tblexpense where ID='$rowid'");
-if($query){
-echo "<script>alert('Record successfully deleted');</script>";
+csrf_check();
+$rowid=intval($_POST['delid']);
+$userid=(int) $_SESSION['detsuid'];
+
+// The user id is part of the WHERE clause, not just the id. Without it any
+// logged-in user could delete anybody's expense by sending a different number:
+// the form only shows their own rows, but nothing stopped a hand-written POST.
+$query=db_exec($con, "delete from tblexpense where ID = ? and UserId = ?", 'ii', [$rowid, $userid]);
+if($query === false){
+echo "<script>alert('Something went wrong. Please try again');</script>";
+} elseif($query === 0){
+echo "<script>alert('Record not found');</script>";
 echo "<script>window.location.href='manage-expense.php'</script>";
 } else {
-echo "<script>alert('Something went wrong. Please try again');</script>";
-
+echo "<script>alert('Record successfully deleted');</script>";
+echo "<script>window.location.href='manage-expense.php'</script>";
 }
 
 }
@@ -67,7 +77,7 @@ echo "<script>alert('Something went wrong. Please try again');</script>";
 					<div class="panel-heading">Expense</div>
 					<div class="panel-body">
 						<p style="font-size:16px; color:red" align="center"> <?php if($msg){
-    echo $msg;
+    echo e($msg);
   }  ?> </p>
 						<div class="col-md-12">
 							
@@ -83,27 +93,70 @@ echo "<script>alert('Something went wrong. Please try again');</script>";
                 </tr>
               </thead>
               <?php
-              $userid=$_SESSION['detsuid'];
-$ret=mysqli_query($con,"select * from tblexpense where UserId='$userid'");
-$cnt=1;
-while ($row=mysqli_fetch_array($ret)) {
+$userid = (int) $_SESSION['detsuid'];
 
+// Pagination: show 10 rows at a time instead of the whole table.
+$perPage = 10;
+$total = (int) (db_row($con, "select count(*) as total from tblexpense where UserId = ?", 'i', [$userid])['total'] ?? 0);
+$totalPages = max(1, (int) ceil($total / $perPage));
+
+// ?page= must be a whole number; anything else falls back to the first page.
+$page = (int) ($_GET['page'] ?? 1);
+if ($page < 1) {
+    $page = 1;
+} elseif ($page > $totalPages) {
+    $page = $totalPages;
+}
+$offset = ($page - 1) * $perPage;
+
+// ORDER BY ID keeps the rows in a stable order, so a row cannot appear on two
+// pages or disappear between them. LIMIT/OFFSET are bound as integers too.
+$rows = db_rows($con, "select * from tblexpense where UserId = ? order by ID limit ? offset ?",
+                'iii', [$userid, $perPage, $offset]);
+$cnt = $offset + 1;
 ?>
               <tbody>
+              <?php if (!$rows) { ?>
+                <tr><td colspan="5">No expenses recorded yet.</td></tr>
+              <?php } ?>
+              <?php foreach ($rows as $row) { ?>
                 <tr>
-                  <td><?php echo $cnt;?></td>
+                  <td><?php echo e($cnt);?></td>
               
-                  <td><?php  echo $row['ExpenseItem'];?></td>
-                  <td><?php  echo $row['ExpenseCost'];?></td>
-                  <td><?php  echo $row['ExpenseDate'];?></td>
-                  <td><a href="manage-expense.php?delid=<?php echo $row['ID'];?>">Delete</a>
+                  <td><?php  echo e($row['ExpenseItem']);?></td>
+                  <td><?php  echo e($row['ExpenseCost']);?></td>
+                  <td><?php  echo e($row['ExpenseDate']);?></td>
+                  <td>
+                    <form method="post" action="manage-expense.php" style="margin:0">
+                      <?php echo csrf_field(); ?>
+                      <input type="hidden" name="delid" value="<?php echo (int) $row['ID']; ?>">
+                      <button type="submit" class="btn btn-link" style="padding:0">Delete</button>
+                    </form>
+                  </td>
                 </tr>
-                <?php 
-$cnt=$cnt+1;
-}?>
-               
+                <?php $cnt = $cnt + 1; ?>
+              <?php } ?>
               </tbody>
             </table>
+
+            <?php if ($totalPages > 1) { ?>
+            <nav>
+              <ul class="pagination">
+                <li<?php echo $page <= 1 ? ' class="disabled"' : ''; ?>>
+                  <a href="manage-expense.php?page=<?php echo e($page - 1); ?>" aria-label="Previous">&laquo;</a>
+                </li>
+                <?php for ($p = 1; $p <= $totalPages; $p++) { ?>
+                <li<?php echo $p === $page ? ' class="active"' : ''; ?>>
+                  <a href="manage-expense.php?page=<?php echo e($p); ?>"><?php echo e($p); ?></a>
+                </li>
+                <?php } ?>
+                <li<?php echo $page >= $totalPages ? ' class="disabled"' : ''; ?>>
+                  <a href="manage-expense.php?page=<?php echo e($page + 1); ?>" aria-label="Next">&raquo;</a>
+                </li>
+              </ul>
+            </nav>
+            <p class="text-muted">Page <?php echo e($page); ?> of <?php echo e($totalPages); ?> &middot; <?php echo e($total); ?> expense(s)</p>
+            <?php } ?>
           </div>
 						</div>
 					</div>
@@ -124,4 +177,3 @@ $cnt=$cnt+1;
 	
 </body>
 </html>
-<?php }  ?>

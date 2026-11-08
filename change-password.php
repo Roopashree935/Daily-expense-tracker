@@ -1,23 +1,35 @@
 <?php
-session_start();
-include('includes/dbconnection.php');
-error_reporting(0);
-if (strlen($_SESSION['detsuid']==0)) {
-  header('location:logout.php');
-  } else{
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/escape.php';
+require_once __DIR__ . '/includes/validate.php';
+require_once __DIR__ . '/includes/password.php';
+require_login();
+
+// Shown in the red message line; empty means "nothing to report".
+$msg = '';
 if(isset($_POST['submit']))
 {
+    csrf_check();
 $userid=$_SESSION['detsuid'];
-$cpassword=md5($_POST['currentpassword']);
-$newpassword=md5($_POST['newpassword']);
-$query=mysqli_query($con,"select ID from tbluser where ID='$userid' and   Password='$cpassword'");
-$row=mysqli_fetch_array($query);
-if($row>0){
-$ret=mysqli_query($con,"update tbluser set Password='$newpassword' where ID='$userid'");
+$cpassword=$_POST['currentpassword'] ?? '';
+$newpassword=$_POST['newpassword'] ?? '';
+$confirmpassword=$_POST['confirmpassword'] ?? '';
+
+if (strlen($newpassword) < 8) {
+$msg="Your new password must be at least 8 characters long.";
+} elseif ($newpassword !== $confirmpassword) {
+$msg="New Password and Confirm Password field does not match";
+} else {
+$row=db_row($con, "select ID, Password from tbluser where ID = ?", 'i', [(int) $userid]);
+if($row !== null && verify_password($cpassword, (string) $row['Password'])){
+$ret=db_exec($con, "update tbluser set Password = ? where ID = ?", 'si', [hash_password($newpassword), (int) $userid]);
 $msg= "Your password successully changed"; 
 } else {
 
 $msg="Your current password is wrong";
+}
 }
 
 
@@ -79,17 +91,18 @@ return true;
 					<div class="panel-heading">Change Password</div>
 					<div class="panel-body">
 						<p style="font-size:16px; color:red" align="center"> <?php if($msg){
-    echo $msg;
+    echo e($msg);
   }  ?> </p>
 						<div class="col-md-12">
 							 <?php
 $userid=$_SESSION['detsuid'];
-$ret=mysqli_query($con,"select * from tbluser where ID='$userid'");
+$rows=db_rows($con, "select * from tbluser where ID = ?", 'i', [(int) $userid]);
 $cnt=1;
-while ($row=mysqli_fetch_array($ret)) {
+foreach ($rows as $row) {
 
 ?>
 							<form role="form" method="post" action="" name="changepassword" onsubmit="return checkpass();">
+							<?php echo csrf_field(); ?>
 								<div class="form-group">
 									<label>Current Password</label>
 									<input type="password" name="currentpassword" class=" form-control" required= "true" value="">
@@ -131,4 +144,3 @@ while ($row=mysqli_fetch_array($ret)) {
 	
 </body>
 </html>
-<?php }  ?>

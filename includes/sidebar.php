@@ -1,7 +1,7 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/dbconnection.php');
+// $con and the session are already set up by the page that included this file.
+require_once __DIR__ . '/dbconnection.php';
+require_once __DIR__ . '/escape.php';
 ?>
 
 
@@ -12,13 +12,12 @@ include('includes/dbconnection.php');
             </div>
             <div class="profile-usertitle">
                 <?php
-$uid=$_SESSION['detsuid'];
-$ret=mysqli_query($con,"select FullName from tbluser where ID='$uid'");
-$row=mysqli_fetch_array($ret);
-$name=$row['FullName'];
+$uid = (int) $_SESSION['detsuid'];
+$row = db_row($con, "select FullName from tbluser where ID = ?", 'i', [$uid]);
+$name = $row['FullName'] ?? '';
 
 ?>
-                <div class="profile-usertitle-name"><?php echo $name; ?></div>
+                <div class="profile-usertitle-name"><?php echo e($name); ?></div>
                 <div class="profile-usertitle-status"><span class="indicator label-success"></span>Online</div>
             </div>
             <div class="clear"></div>

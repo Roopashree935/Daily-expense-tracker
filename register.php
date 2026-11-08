@@ -1,28 +1,51 @@
-<?php 
-session_start();
-error_reporting(0);
+<?php
+require_once __DIR__ . '/includes/auth.php';
 include('includes/dbconnection.php');
+require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/escape.php';
+require_once __DIR__ . '/includes/validate.php';
+require_once __DIR__ . '/includes/password.php';
+
+// Shown in the red message line; empty means "nothing to report".
+$msg = '';
 if(isset($_POST['submit']))
   {
-    $fname=$_POST['name'];
-    $mobno=$_POST['mobilenumber'];
-    $email=$_POST['email'];
-    $password=md5($_POST['password']);
+    csrf_check();
+    $fname=trim($_POST['name'] ?? '');
+    $mobno=trim($_POST['mobilenumber'] ?? '');
+    $email=trim($_POST['email'] ?? '');
+    $plainpassword=$_POST['password'] ?? '';
+    $repeatpassword=$_POST['repeatpassword'] ?? '';
 
-    $ret=mysqli_query($con, "select Email from tbluser where Email='$email' ");
-    $result=mysqli_fetch_array($ret);
-    if($result>0){
+    // Validate before touching the database, and report the first problem only.
+    if (!is_valid_name($fname)) {
+      $msg="Please enter your full name.";
+    } elseif (!is_valid_email($email)) {
+      $msg="Please enter a valid email address.";
+    } elseif (!is_valid_mobile($mobno)) {
+      $msg="Please enter a 10-digit mobile number.";
+    } elseif (strlen($plainpassword) < 8) {
+      $msg="Your password must be at least 8 characters long.";
+    } elseif ($plainpassword !== $repeatpassword) {
+      // The form checks this in JavaScript; that check is a courtesy, not a
+      // guarantee, because JavaScript can be turned off.
+      $msg="Password and Repeat Password field does not match";
+    } else {
+    $password=hash_password($plainpassword);
+    $result=db_row($con, "select Email from tbluser where Email = ?", 's', [$email]);
+    if($result !== null){
 $msg="This email  associated with another account";
     }
     else{
-    $query=mysqli_query($con, "insert into tbluser(FullName, MobileNumber, Email,  Password) value('$fname', '$mobno', '$email', '$password' )");
-    if ($query) {
+    $query=db_exec($con, "insert into tbluser(FullName, MobileNumber, Email, Password) values (?, ?, ?, ?)", 'ssss', [$fname, $mobno, $email, $password]);
+    if ($query !== false) {
     $msg="You have successfully registered";
   }
   else
     {
       $msg="Something Went Wrong. Please try again";
     }
+}
 }
 }
 
@@ -59,8 +82,9 @@ return true;
 				<div class="panel-heading">Sign Up</div>
 				<div class="panel-body">
 					<form role="form" action="" method="post" id="" name="signup" onsubmit="return checkpass();">
+							<?php echo csrf_field(); ?>
 						<p style="font-size:16px; color:red" align="center"> <?php if($msg){
-    echo $msg;
+    echo e($msg);
   }  ?> </p>
 						<fieldset>
 							<div class="form-group">

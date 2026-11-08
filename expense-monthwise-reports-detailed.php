@@ -1,10 +1,15 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/dbconnection.php');
-if (strlen($_SESSION['detsuid']==0)) {
-  header('location:logout.php');
-  } else{
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/escape.php';
+require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/validate.php';
+require_login();
+
+// Reached by POST from the report form; a POST must carry this session's token.
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    csrf_check();
+}
 
   
 
@@ -53,11 +58,27 @@ if (strlen($_SESSION['detsuid']==0)) {
 						<div class="col-md-12">
 					
 <?php
-$fdate=$_POST['fromdate'];
- $tdate=$_POST['todate'];
-$rtype=$_POST['requesttype'];
+// The page is also reachable without a POST (someone opening the URL directly),
+// so every field needs a default before it is used.
+$fdate = trim($_POST['fromdate'] ?? '');
+$tdate = trim($_POST['todate'] ?? '');
+$rtype = $_POST['requesttype'] ?? '';
+$totalsexp = 0;
+
+// Only two real dates in the right order can produce a meaningful report.
+$dateError = '';
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!is_valid_date($fdate) || !is_valid_date($tdate)) {
+        $dateError = 'Please choose a valid from date and to date.';
+    } elseif ($fdate > $tdate) {
+        $dateError = 'The from date must be on or before the to date.';
+    }
+}
 ?>
-<h5 align="center" style="color:blue">Monthwise Expense Report from <?php echo $fdate?> to <?php echo $tdate?></h5>
+<h5 align="center" style="color:blue">Monthwise Expense Report from <?php echo e($fdate)?> to <?php echo e($tdate)?></h5>
+<?php if ($dateError !== '') { ?>
+<p style="color:red" align="center"><?php echo e($dateError); ?></p>
+<?php } ?>
 <hr />
                                     <table id="datatable" class="table table-bordered dt-responsive nowrap" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
                                         <thead>
@@ -70,18 +91,18 @@ $rtype=$_POST['requesttype'];
                                         </tr>
                                         </thead>
  <?php
-$userid=$_SESSION['detsuid'];
-$ret=mysqli_query($con,"SELECT month(ExpenseDate) as rptmonth,year(ExpenseDate) as rptyear,SUM(ExpenseCost) as totalmonth FROM tblexpense  where (ExpenseDate BETWEEN '$fdate' and '$tdate') && (UserId='$userid') group by month(ExpenseDate),year(ExpenseDate)");
+$userid = (int) $_SESSION['detsuid'];
+$rows = $dateError === '' ? db_rows($con, "SELECT month(ExpenseDate) as rptmonth, year(ExpenseDate) as rptyear, SUM(ExpenseCost) as totalmonth FROM tblexpense where ExpenseDate BETWEEN ? and ? and UserId = ? group by month(ExpenseDate), year(ExpenseDate)", 'ssi', [$fdate, $tdate, $userid]) : [];
 $cnt=1;
-while ($row=mysqli_fetch_array($ret)) {
+foreach ($rows as $row) {
 
 ?>
               
                 <tr>
-                  <td><?php echo $cnt;?></td>
+                  <td><?php echo e($cnt);?></td>
             
-                  <td><?php  echo $row['rptmonth']."-".$row['rptyear'];?></td>
-                  <td><?php  echo $ttlsl=$row['totalmonth'];?></td>
+                  <td><?php  echo e($row['rptmonth']) . "-" . e($row['rptyear']);?></td>
+                  <td><?php $ttlsl = $row['totalmonth']; echo e($ttlsl); ?></td>
            
            
                 </tr>
@@ -92,7 +113,7 @@ $cnt=$cnt+1;
 
  <tr>
   <th colspan="2" style="text-align:center">Grand Total</th>     
-  <td><?php echo $totalsexp;?></td>
+  <td><?php echo e($totalsexp);?></td>
  </tr>     
 
                                     </table>
@@ -119,4 +140,3 @@ $cnt=$cnt+1;
 	
 </body>
 </html>
-<?php } ?>

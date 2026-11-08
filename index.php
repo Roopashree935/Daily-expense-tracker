@@ -1,15 +1,28 @@
-<?php session_start();
-error_reporting(0);
-include('includes/dbconnection.php');
+<?php
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/escape.php';
+require_once __DIR__ . '/includes/password.php';
+
+// Shown in the red message line; empty means "nothing to report".
+$msg = '';
 
 if(isset($_POST['login']))
   {
+    csrf_check();
     $email=$_POST['email'];
-    $password=md5($_POST['password']);
-    $query=mysqli_query($con,"select ID from tbluser where  Email='$email' && Password='$password' ");
-    $ret=mysqli_fetch_array($query);
-    if($ret>0){
-      $_SESSION['detsuid']=$ret['ID'];
+    $password=$_POST['password'];
+    // Fetch by email only; the password is checked in PHP, not in SQL.
+    $ret=db_row($con, "select ID, Password from tbluser where Email = ?", 's', [$email]);
+    if($ret !== null && verify_password($password, (string) $ret['Password'])){
+      // Legacy md5 row? Replace it with a bcrypt hash while we have the plain
+      // password in hand, so existing users are upgraded without a reset.
+      if (password_needs_upgrade((string) $ret['Password'])) {
+        db_exec($con, "update tbluser set Password = ? where ID = ?", 'si',
+                [hash_password($password), (int) $ret['ID']]);
+      }
+      login_user((int) $ret['ID']);
      header('location:dashboard.php');
     }
     else{
@@ -38,9 +51,10 @@ if(isset($_POST['login']))
 				<div class="panel-heading">Log in</div>
 				<div class="panel-body">
 					<p style="font-size:16px; color:red" align="center"> <?php if($msg){
-    echo $msg;
+    echo e($msg);
   }  ?> </p>
 					<form role="form" action="" method="post" id="" name="login">
+							<?php echo csrf_field(); ?>
 						<fieldset>
 							<div class="form-group">
 								<input class="form-control" placeholder="E-mail" name="email" type="email" autofocus="" required="true">

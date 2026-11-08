@@ -1,0 +1,32 @@
+# Apache configuration for the Daily Expense Tracker.
+#
+# `php -S` (the built-in server) does not read this file; it applies under
+# XAMPP, WAMP, LAMP and on shared hosting such as InfinityFree.
+
+# Without this, /css/, /js/ and /fonts/ answer with a listing of their files.
+Options -Indexes
+
+<IfModule mod_headers.c>
+    # Stop the browser from second-guessing a file's type, which is how an
+    # uploaded .txt ends up executed as a script.
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Refuse to be shown inside a frame, so this app's login form cannot be
+    # overlaid on another page (clickjacking).
+    Header always set X-Frame-Options "SAMEORIGIN"
+
+    # Do not send this app's URLs to other sites in the Referer header.
+    Header always set Referrer-Policy "same-origin"
+</IfModule>
+
+# database/detsdb.sql contains the user table, password hashes included, and
+# the README and logs are not meant to be downloaded either.
+<FilesMatch "\.(sql|md|ini|log)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>

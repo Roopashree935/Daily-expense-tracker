@@ -1,22 +1,33 @@
 <?php
-session_start();
-error_reporting(0);
+require_once __DIR__ . '/includes/auth.php';
 include('includes/dbconnection.php');
+require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/escape.php';
+require_once __DIR__ . '/includes/validate.php';
+
+// Shown in the red message line; empty means "nothing to report".
+$msg = '';
 
 if(isset($_POST['submit']))
   {
-    $contactno=$_POST['contactno'];
-    $email=$_POST['email'];
+    csrf_check();
+    $contactno=trim($_POST['contactno'] ?? '');
+    $email=trim($_POST['email'] ?? '');
 
-        $query=mysqli_query($con,"select ID from tbluser where  Email='$email' and MobileNumber='$contactno' ");
-    $ret=mysqli_fetch_array($query);
-    if($ret>0){
+    if (!is_valid_email($email) || !is_valid_mobile($contactno)) {
+      // Deliberately the same message as a wrong combination, so the form does
+      // not reveal which accounts exist.
+      $msg="Invalid Details. Please try again.";
+    } else {
+        $ret=db_row($con, "select ID from tbluser where Email = ? and MobileNumber = ?", 'ss', [$email, $contactno]);
+    if($ret !== null){
       $_SESSION['contactno']=$contactno;
       $_SESSION['email']=$email;
      header('location:reset-password.php');
     }
     else{
       $msg="Invalid Details. Please try again.";
+    }
     }
   }
   ?>
@@ -40,9 +51,10 @@ if(isset($_POST['submit']))
 				<div class="panel-heading">Log in</div>
 				<div class="panel-body">
 					<p style="font-size:16px; color:red" align="center"> <?php if($msg){
-    echo $msg;
+    echo e($msg);
   }  ?> </p>
 					<form role="form" action="" method="post" id="" name="login">
+							<?php echo csrf_field(); ?>
 						<fieldset>
 							<div class="form-group">
 								<input class="form-control" placeholder="E-mail" name="email" type="email" autofocus="" required="true">

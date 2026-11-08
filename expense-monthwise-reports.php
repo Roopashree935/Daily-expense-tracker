@@ -1,14 +1,13 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/dbconnection.php');
-if (strlen($_SESSION['detsuid']==0)) {
-  header('location:logout.php');
-  } else{
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/escape.php';
+require_once __DIR__ . '/includes/csrf.php';
+require_login();
 
-  
-}
-  ?>
+// Shown in the red message line; empty means "nothing to report".
+$msg = '';
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -50,13 +49,14 @@ if (strlen($_SESSION['detsuid']==0)) {
 					<div class="panel-heading">Monthwise Expense Report</div>
 					<div class="panel-body">
 						<p style="font-size:16px; color:red" align="center"> <?php if($msg){
-    echo $msg;
+    echo e($msg);
   }  ?> </p>
 						<div class="col-md-12">
 					
 
 
 							<form role="form" method="post" action="expense-monthwise-reports-detailed.php" name="bwdatesreport">
+								<?php echo csrf_field(); ?>
 								<div class="form-group">
 									<label>From Date</label>
 									<input class="form-control" type="date"  id="fromdate" name="fromdate" required="true">

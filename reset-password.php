@@ -1,22 +1,39 @@
 <?php
-session_start();
-error_reporting(0);
+require_once __DIR__ . '/includes/auth.php';
 include('includes/dbconnection.php');
-error_reporting(0);
+require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/escape.php';
+require_once __DIR__ . '/includes/validate.php';
+require_once __DIR__ . '/includes/password.php';
+
+// Shown in the red message line; empty means "nothing to report".
+$msg = '';
 
 if(isset($_POST['submit']))
   {
-    $contactno=$_SESSION['contactno'];
-    $email=$_SESSION['email'];
-    $password=md5($_POST['newpassword']);
+    csrf_check();
+    $contactno=$_SESSION['contactno'] ?? '';
+    $email=$_SESSION['email'] ?? '';
+    $newpassword=$_POST['newpassword'] ?? '';
+    $confirmpassword=$_POST['confirmpassword'] ?? '';
 
-        $query=mysqli_query($con,"update tbluser set Password='$password'  where  Email='$email' && MobileNumber='$contactno' ");
-   if($query)
+    if ($email === '' || $contactno === '') {
+      // Someone opened this page without going through forgot-password.php.
+      $msg="Please start again from the Forgot Password page.";
+    } elseif (strlen($newpassword) < 8) {
+      $msg="Your password must be at least 8 characters long.";
+    } elseif ($newpassword !== $confirmpassword) {
+      $msg="New Password and Confirm Password field does not match";
+    } else {
+    $password=hash_password($newpassword);
+
+        $query=db_exec($con, "update tbluser set Password = ? where Email = ? and MobileNumber = ?", 'sss', [$password, $email, $contactno]);
+   if($query !== false)
    {
 echo "<script>alert('Password successfully changed');</script>";
 session_destroy();
    }
-  
+    }
   }
   ?>
 <!DOCTYPE html>
@@ -51,9 +68,10 @@ return true;
 				<div class="panel-heading">Rest Password</div>
 				<div class="panel-body">
 					<p style="font-size:16px; color:red" align="center"> <?php if($msg){
-    echo $msg;
+    echo e($msg);
   }  ?> </p>
 					<form role="form" action="" method="post" name="changepassword" onsubmit="return checkpass()">
+							<?php echo csrf_field(); ?>
 						<fieldset>
 							<div class="form-group">
 								<input class="form-control" placeholder="Password" name="newpassword" type="password" value="" required="true">

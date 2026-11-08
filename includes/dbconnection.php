@@ -1,7 +1,66 @@
 <?php
-$con=mysqli_connect("localhost", "root", "", "detsdb");
-if(mysqli_connect_errno()){
-echo "Connection Fail".mysqli_connect_error();
+/**
+ * Loads the configuration, sets the error-reporting policy and opens $con.
+ *
+ * Every page includes this file first, so this is the one place where those
+ * three things happen.
+ */
+
+$detsConfigFile = __DIR__ . '/config.php';
+if (!is_file($detsConfigFile)) {
+    // No local config yet: fall back to the committed example so a fresh
+    // clone (and XAMPP out of the box) still connects.
+    $detsConfigFile = __DIR__ . '/config.example.php';
+}
+$detsConfig = require $detsConfigFile;
+
+/**
+ * Errors used to be hidden with error_reporting(0) on every page, which meant
+ * a broken query produced a blank page and no clue. Now the level is always
+ * E_ALL and only the *display* depends on the environment: developers see the
+ * message, production logs it and shows nothing.
+ */
+$detsIsDev = ($detsConfig['app_env'] ?? 'prod') === 'dev';
+error_reporting(E_ALL);
+ini_set('display_errors', $detsIsDev ? '1' : '0');
+ini_set('log_errors', '1');
+
+/**
+ * PHP 8.1+ makes mysqli throw mysqli_sql_exception on any error. This codebase
+ * was written for the older contract — "false means the query failed" — so it
+ * asks for that back instead of letting every failed query turn into an
+ * uncaught exception with a stack trace. Failures are handled explicitly below
+ * and in includes/db.php.
+ */
+mysqli_report(MYSQLI_REPORT_OFF);
+
+$con = @mysqli_connect(
+    $detsConfig['db_host'],
+    $detsConfig['db_user'],
+    $detsConfig['db_pass'],
+    $detsConfig['db_name'],
+    (int) $detsConfig['db_port']
+);
+
+if (!$con) {
+    // mysqli_connect_error() names the host, the user and the database, so it
+    // never goes into the response in production.
+    $detsDetail = 'Daily Expense Tracker: database connection failed: ' . mysqli_connect_error();
+
+    // A command-line caller (tests/smoke.php) needs a non-zero exit code to see
+    // that it failed; exit() with a string always reports success.
+    if (PHP_SAPI === 'cli') {
+        fwrite(STDERR, $detsDetail . PHP_EOL);
+        exit(1);
+    }
+
+    error_log($detsDetail);
+    http_response_code(500);
+
+    exit($detsIsDev
+        ? 'Database connection failed: ' . mysqli_connect_error()
+        : 'Database connection failed.');
 }
 
-  ?>
+// Query helpers (db_rows / db_row / db_exec) come with the connection.
+require_once __DIR__ . '/db.php';

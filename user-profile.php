@@ -1,23 +1,33 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/dbconnection.php');
-if (strlen($_SESSION['detsuid']==0)) {
-  header('location:logout.php');
-  } else{
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/dbconnection.php';
+require_once __DIR__ . '/includes/csrf.php';
+require_once __DIR__ . '/includes/escape.php';
+require_once __DIR__ . '/includes/validate.php';
+require_login();
+
+// Shown in the red message line; empty means "nothing to report".
+$msg = '';
     if(isset($_POST['submit']))
   {
+    csrf_check();
     $userid=$_SESSION['detsuid'];
-    $fullname=$_POST['fullname'];
-  $mobno=$_POST['contactnumber'];
+    $fullname=trim($_POST['fullname'] ?? '');
+    $mobno=trim($_POST['contactnumber'] ?? '');
 
-     $query=mysqli_query($con, "update tbluser set FullName ='$fullname', MobileNumber='$mobno' where ID='$userid'");
-    if ($query) {
+    if (!is_valid_name($fullname)) {
+      $msg="Please enter your full name.";
+    } elseif (!is_valid_mobile($mobno)) {
+      $msg="Please enter a 10-digit mobile number.";
+    } else {
+     $query=db_exec($con, "update tbluser set FullName = ?, MobileNumber = ? where ID = ?", 'ssi', [$fullname, $mobno, (int) $userid]);
+    if ($query !== false) {
     $msg="User profile has been updated.";
   }
   else
     {
       $msg="Something Went Wrong. Please try again.";
+    }
     }
   }
   ?>
@@ -65,33 +75,34 @@ if (strlen($_SESSION['detsuid']==0)) {
 					<div class="panel-heading">Profile</div>
 					<div class="panel-body">
 						<p style="font-size:16px; color:red" align="center"> <?php if($msg){
-    echo $msg;
+    echo e($msg);
   }  ?> </p>
 						<div class="col-md-12">
 							 <?php
 $userid=$_SESSION['detsuid'];
-$ret=mysqli_query($con,"select * from tbluser where ID='$userid'");
+$rows=db_rows($con, "select * from tbluser where ID = ?", 'i', [(int) $userid]);
 $cnt=1;
-while ($row=mysqli_fetch_array($ret)) {
+foreach ($rows as $row) {
 
 ?>
 							<form role="form" method="post" action="">
+							<?php echo csrf_field(); ?>
 								<div class="form-group">
 									<label>Full Name</label>
-									<input class="form-control" type="text" value="<?php  echo $row['FullName'];?>" name="fullname" required="true">
+									<input class="form-control" type="text" value="<?php  echo e($row['FullName']);?>" name="fullname" required="true">
 								</div>
 								<div class="form-group">
 									<label>Email</label>
-<input type="email" class="form-control" name="email" value="<?php  echo $row['Email'];?>" required="true" readonly="true">
+<input type="email" class="form-control" name="email" value="<?php  echo e($row['Email']);?>" required="true" readonly="true">
 								</div>
 								
 								<div class="form-group">
 									<label>Mobile Number</label>
-									<input class="form-control" type="text" value="<?php  echo $row['MobileNumber'];?>" required="true" name="contactnumber" maxlength="10">
+									<input class="form-control" type="text" value="<?php  echo e($row['MobileNumber']);?>" required="true" name="contactnumber" maxlength="10">
 								</div>
 								<div class="form-group">
 									<label>Registration Date</label>
-									<input class="form-control" name="regdate" type="text" value="<?php  echo $row['RegDate'];?>" readonly="true">
+									<input class="form-control" name="regdate" type="text" value="<?php  echo e($row['RegDate']);?>" readonly="true">
 								</div>
 								
 								<div class="form-group has-success">
@@ -121,4 +132,3 @@ while ($row=mysqli_fetch_array($ret)) {
 	
 </body>
 </html>
-<?php }  ?>

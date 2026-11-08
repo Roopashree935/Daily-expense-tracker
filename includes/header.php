@@ -1,7 +1,6 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/dbconnection.php');
+// $con and the session are already set up by the page that included this file.
+require_once __DIR__ . '/dbconnection.php';
 ?>
 
 <nav class="navbar navbar-custom navbar-fixed-top" role="navigation">
