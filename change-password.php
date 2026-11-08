@@ -10,10 +10,9 @@ if(isset($_POST['submit']))
 $userid=$_SESSION['detsuid'];
 $cpassword=md5($_POST['currentpassword']);
 $newpassword=md5($_POST['newpassword']);
-$query=mysqli_query($con,"select ID from tbluser where ID='$userid' and   Password='$cpassword'");
-$row=mysqli_fetch_array($query);
-if($row>0){
-$ret=mysqli_query($con,"update tbluser set Password='$newpassword' where ID='$userid'");
+$row=db_row($con, "select ID from tbluser where ID = ? and Password = ?", 'is', [(int) $userid, $cpassword]);
+if($row !== null){
+$ret=db_exec($con, "update tbluser set Password = ? where ID = ?", 'si', [$newpassword, (int) $userid]);
 $msg= "Your password successully changed"; 
 } else {
 
@@ -84,9 +83,9 @@ return true;
 						<div class="col-md-12">
 							 <?php
 $userid=$_SESSION['detsuid'];
-$ret=mysqli_query($con,"select * from tbluser where ID='$userid'");
+$rows=db_rows($con, "select * from tbluser where ID = ?", 'i', [(int) $userid]);
 $cnt=1;
-while ($row=mysqli_fetch_array($ret)) {
+foreach ($rows as $row) {
 
 ?>
 							<form role="form" method="post" action="" name="changepassword" onsubmit="return checkpass();">

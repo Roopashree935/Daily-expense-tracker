@@ -11,8 +11,8 @@ if(isset($_POST['submit']))
     $email=$_SESSION['email'];
     $password=md5($_POST['newpassword']);
 
-        $query=mysqli_query($con,"update tbluser set Password='$password'  where  Email='$email' && MobileNumber='$contactno' ");
-   if($query)
+        $query=db_exec($con, "update tbluser set Password = ? where Email = ? and MobileNumber = ?", 'sss', [$password, $email, $contactno]);
+   if($query !== false)
    {
 echo "<script>alert('Password successfully changed');</script>";
 session_destroy();

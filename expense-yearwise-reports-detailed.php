@@ -70,10 +70,10 @@ $totalsexp = 0;
                                         </tr>
                                         </thead>
  <?php
-$userid=$_SESSION['detsuid'];
-$ret=mysqli_query($con,"SELECT year(ExpenseDate) as rptyear,SUM(ExpenseCost) as totalyear FROM tblexpense  where (ExpenseDate BETWEEN '$fdate' and '$tdate') && (UserId='$userid') group by year(ExpenseDate)");
+$userid = (int) $_SESSION['detsuid'];
+$rows = db_rows($con, "SELECT year(ExpenseDate) as rptyear, SUM(ExpenseCost) as totalyear FROM tblexpense where ExpenseDate BETWEEN ? and ? and UserId = ? group by year(ExpenseDate)", 'ssi', [$fdate, $tdate, $userid]);
 $cnt=1;
-while ($row=mysqli_fetch_array($ret)) {
+foreach ($rows as $row) {
 
 ?>
               

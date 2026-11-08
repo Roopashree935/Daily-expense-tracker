@@ -10,9 +10,8 @@ if(isset($_POST['submit']))
     $contactno=$_POST['contactno'];
     $email=$_POST['email'];
 
-        $query=mysqli_query($con,"select ID from tbluser where  Email='$email' and MobileNumber='$contactno' ");
-    $ret=mysqli_fetch_array($query);
-    if($ret>0){
+        $ret=db_row($con, "select ID from tbluser where Email = ? and MobileNumber = ?", 'ss', [$email, $contactno]);
+    if($ret !== null){
       $_SESSION['contactno']=$contactno;
       $_SESSION['email']=$email;
      header('location:reset-password.php');

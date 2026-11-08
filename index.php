@@ -9,9 +9,8 @@ if(isset($_POST['login']))
   {
     $email=$_POST['email'];
     $password=md5($_POST['password']);
-    $query=mysqli_query($con,"select ID from tbluser where  Email='$email' && Password='$password' ");
-    $ret=mysqli_fetch_array($query);
-    if($ret>0){
+    $ret=db_row($con, "select ID from tbluser where Email = ? and Password = ?", 'ss', [$email, $password]);
+    if($ret !== null){
       login_user((int) $ret['ID']);
      header('location:dashboard.php');
     }

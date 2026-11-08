@@ -11,10 +11,9 @@ require_once __DIR__ . '/dbconnection.php';
             </div>
             <div class="profile-usertitle">
                 <?php
-$uid=$_SESSION['detsuid'];
-$ret=mysqli_query($con,"select FullName from tbluser where ID='$uid'");
-$row=mysqli_fetch_array($ret);
-$name=$row['FullName'];
+$uid = (int) $_SESSION['detsuid'];
+$row = db_row($con, "select FullName from tbluser where ID = ?", 'i', [$uid]);
+$name = $row['FullName'] ?? '';
 
 ?>
                 <div class="profile-usertitle-name"><?php echo $name; ?></div>

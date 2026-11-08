@@ -11,8 +11,8 @@ $msg = '';
     $fullname=$_POST['fullname'];
   $mobno=$_POST['contactnumber'];
 
-     $query=mysqli_query($con, "update tbluser set FullName ='$fullname', MobileNumber='$mobno' where ID='$userid'");
-    if ($query) {
+     $query=db_exec($con, "update tbluser set FullName = ?, MobileNumber = ? where ID = ?", 'ssi', [$fullname, $mobno, (int) $userid]);
+    if ($query !== false) {
     $msg="User profile has been updated.";
   }
   else
@@ -70,9 +70,9 @@ $msg = '';
 						<div class="col-md-12">
 							 <?php
 $userid=$_SESSION['detsuid'];
-$ret=mysqli_query($con,"select * from tbluser where ID='$userid'");
+$rows=db_rows($con, "select * from tbluser where ID = ?", 'i', [(int) $userid]);
 $cnt=1;
-while ($row=mysqli_fetch_array($ret)) {
+foreach ($rows as $row) {
 
 ?>
 							<form role="form" method="post" action="">

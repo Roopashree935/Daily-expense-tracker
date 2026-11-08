@@ -51,3 +51,6 @@ if (!$con) {
         ? 'Database connection failed: ' . mysqli_connect_error()
         : 'Database connection failed.');
 }
+
+// Query helpers (db_rows / db_row / db_exec) come with the connection.
+require_once __DIR__ . '/db.php';
