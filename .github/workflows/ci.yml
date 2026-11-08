@@ -1,0 +1,108 @@
+name: CI
+
+# Runs on every push to master and on every pull request:
+#   * lints every PHP file
+#   * imports the schema into a throwaway MySQL 8 and runs tests/smoke.php
+#   * serves the app with PHP's built-in server and runs tests/e2e.sh against it
+#   * fails if the server log contains a warning, notice or fatal error
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: PHP 8.2 + MySQL 8
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+          MYSQL_DATABASE: detsdb
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -u root"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mysqli
+          coverage: none
+
+      - name: Write includes/config.php for this run
+        run: |
+          cat > includes/config.php <<'PHP'
+          <?php
+          return [
+              'db_host' => '127.0.0.1',
+              'db_name' => 'detsdb',
+              'db_user' => 'root',
+              'db_pass' => '',
+              'db_port' => 3306,
+              'app_env' => 'dev',
+          ];
+          PHP
+
+      - name: Lint every PHP file
+        run: |
+          fail=0
+          while IFS= read -r file; do
+            php -l "$file" > /dev/null || fail=1
+          done < <(git ls-files '*.php')
+          exit "$fail"
+
+      - name: Import the schema
+        run: |
+          php -r '
+            require "includes/dbconnection.php";
+            $sql = file_get_contents("database/detsdb.sql");
+            if (!mysqli_multi_query($con, $sql)) {
+                fwrite(STDERR, "import failed: " . mysqli_error($con) . PHP_EOL);
+                exit(1);
+            }
+            while (mysqli_more_results($con) && mysqli_next_result($con)) {}
+            $row = mysqli_fetch_row(mysqli_query($con, "select count(*) from tbluser"));
+            echo "schema imported, {$row[0]} seeded users\n";
+          '
+
+      - name: Smoke test (tables and columns)
+        run: php tests/smoke.php
+
+      - name: Start the app
+        run: |
+          php -S localhost:8000 -t . > /tmp/php-server.log 2>&1 &
+          for i in $(seq 1 40); do
+            curl -s -o /dev/null http://localhost:8000/index.php && break
+            sleep 0.25
+          done
+          curl -s -o /dev/null -w 'index.php -> %{http_code}\n' http://localhost:8000/index.php
+
+      - name: End-to-end checks
+        run: bash tests/e2e.sh
+        env:
+          BASE_URL: http://localhost:8000
+
+      - name: No warnings, notices or fatal errors
+        if: always()
+        run: |
+          echo "--- PHP server log"
+          cat /tmp/php-server.log
+          if grep -qE 'Warning:|Notice:|Deprecated:|Fatal error' /tmp/php-server.log; then
+            echo "::error::the application emitted PHP warnings or errors"
+            exit 1
+          fi
