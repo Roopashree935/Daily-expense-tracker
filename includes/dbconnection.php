@@ -44,9 +44,19 @@ $con = @mysqli_connect(
 
 if (!$con) {
     // mysqli_connect_error() names the host, the user and the database, so it
-    // goes to the log and never into the response.
-    error_log('Daily Expense Tracker: database connection failed: ' . mysqli_connect_error());
+    // never goes into the response in production.
+    $detsDetail = 'Daily Expense Tracker: database connection failed: ' . mysqli_connect_error();
+
+    // A command-line caller (tests/smoke.php) needs a non-zero exit code to see
+    // that it failed; exit() with a string always reports success.
+    if (PHP_SAPI === 'cli') {
+        fwrite(STDERR, $detsDetail . PHP_EOL);
+        exit(1);
+    }
+
+    error_log($detsDetail);
     http_response_code(500);
+
     exit($detsIsDev
         ? 'Database connection failed: ' . mysqli_connect_error()
         : 'Database connection failed.');
