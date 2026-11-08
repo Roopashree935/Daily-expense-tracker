@@ -1,10 +1,7 @@
 <?php
-session_start();
-error_reporting(0);
-include('includes/dbconnection.php');
-if (strlen($_SESSION['detsuid']==0)) {
-  header('location:logout.php');
-  } else{
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/dbconnection.php';
+require_login();
 
 if(isset($_POST['submit']))
   {
@@ -113,4 +110,3 @@ echo "<script>alert('Something went wrong. Please try again');</script>";
 	
 </body>
 </html>
-<?php }  ?>

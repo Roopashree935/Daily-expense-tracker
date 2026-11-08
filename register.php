@@ -1,7 +1,7 @@
-<?php 
-session_start();
-error_reporting(0);
+<?php
+require_once __DIR__ . '/includes/auth.php';
 include('includes/dbconnection.php');
+error_reporting(0);
 if(isset($_POST['submit']))
   {
     $fname=$_POST['name'];

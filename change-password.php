@@ -1,10 +1,7 @@
 <?php
-session_start();
-include('includes/dbconnection.php');
-error_reporting(0);
-if (strlen($_SESSION['detsuid']==0)) {
-  header('location:logout.php');
-  } else{
+require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/dbconnection.php';
+require_login();
 if(isset($_POST['submit']))
 {
 $userid=$_SESSION['detsuid'];
@@ -131,4 +128,3 @@ while ($row=mysqli_fetch_array($ret)) {
 	
 </body>
 </html>
-<?php }  ?>
